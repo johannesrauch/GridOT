@@ -1,0 +1,52 @@
+{
+    "version": 8,
+    "configurePresets": [
+      {
+        "name": "default",
+        "hidden": true,
+        "binaryDir": "${sourceDir}/build/${presetName}"
+      },
+      {
+        "name": "Debug",
+        "inherits": "default",
+        "displayName": "Debug",
+        "description": "Debug build with optimizations disabled",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug"
+        }
+      },
+      {
+        "name": "Release",
+        "inherits": "default",
+        "displayName": "Release",
+        "description": "Release build with optimizations enabled",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Release"
+        }
+      }
+    ],
+    "buildPresets": [
+      {
+        "name": "Debug",
+        "configurePreset": "Debug",
+        "description": "Build with Debug configuration"
+      },
+      {
+        "name": "Release",
+        "configurePreset": "Release",
+        "description": "Build with Release configuration"
+      }
+    ],
+    "testPresets": [
+      {
+        "name": "Debug",
+        "configurePreset": "Debug",
+        "description": "Run tests in Debug configuration"
+      },
+      {
+        "name": "Release",
+        "configurePreset": "Release",
+        "description": "Run tests in Release configuration"
+      }
+    ]
+  }
