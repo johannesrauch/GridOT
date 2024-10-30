@@ -102,6 +102,8 @@ class UlmGridSolver {
 
   Cost totalCost() const { return _net.totalCost(); }
 
+  Value flow(Arc a) const {return _net.flow(a);}
+
  private:
   ProblemType run(int depth, GR& parent) {
     ProblemType r;
