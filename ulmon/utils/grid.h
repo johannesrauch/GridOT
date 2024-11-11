@@ -198,18 +198,29 @@ inline void advancePos(  //
 // Hierarchy
 //
 
-inline int log2(int i) {
-  return 31 - __builtin_clz(i);  // clz = count leading zeros
+inline int ceil_log(int n, int b) {
+  if (n <= 1) return 0;  // log_b(1) is 0, and for n <= 0 it's undefined
+
+  int res = 0;
+  int power = 1;  // Start with b^0 = 1
+
+  while (power < n) {
+    power *= b;
+    ++res;
+  }
+
+  return res;
 }
 
 /// \brief Returns a suitable hierarchical depth for the multiscale solver
 template <typename Array>
-inline int hierarchicalDepth(const Array& gridDimX, const Array& gridDimY) {
+inline int hierarchicalDepth(const Array& gridDimX, const Array& gridDimY,
+                             const int merge_num) {
   constexpr int dim = std::tuple_size<Array>{};
   int min = std::numeric_limits<int>::max();
   for (const auto& d : gridDimX) min = std::min(min, d);
   for (const auto& d : gridDimY) min = std::min(min, d);
-  return std::max(0, log2(min) - 1);
+  return std::max(0, ceil_log(min, merge_num) - 1);
 }
 
 //
@@ -245,7 +256,8 @@ inline bool leq(const Array& a, const Array& b) {
 }
 
 template <typename Array>
-inline bool contains(const Array& min, const Array& max, const Array& mi, const Array &ma) {
+inline bool contains(const Array& min, const Array& max, const Array& mi,
+                     const Array& ma) {
   return leq(min, mi) && less(ma, max);
 }
 

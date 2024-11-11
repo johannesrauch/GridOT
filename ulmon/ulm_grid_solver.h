@@ -41,7 +41,8 @@ class UlmGridSolver {
       : _graph(graph),
         _net(graph, false),
         _merge_num(merge_num),
-        _max_depth(utils::hierarchicalDepth(_graph._x_dim, _graph._y_dim)) {
+        _max_depth(
+            utils::hierarchicalDepth(_graph._x_dim, _graph._y_dim, merge_num)) {
     _support.reserve(countNodes(_graph));
   }
 
@@ -102,7 +103,7 @@ class UlmGridSolver {
 
   Cost totalCost() const { return _net.totalCost(); }
 
-  Value flow(Arc a) const {return _net.flow(a);}
+  Value flow(Arc a) const { return _net.flow(a); }
 
  private:
   ProblemType run(int depth, GR& parent) {
