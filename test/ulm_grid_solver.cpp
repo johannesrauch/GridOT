@@ -26,7 +26,6 @@ using namespace lemon;
 using namespace lemon::test;
 
 using Graph = UlmGridGraph<>;
-using Graph = UlmGridGraph<>;
 using TestSolver = UlmGridSolver<Graph>;
 using TestSubsolver = UlmNetworkSimplex<Graph>;
 

@@ -20,18 +20,14 @@ set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type")
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/.
-    ${CMAKE_SOURCE_DIR}/local/include
-    ${CMAKE_SOURCE_DIR}/MultiScaleOT/src
-)
-
-link_directories(
-    ${CMAKE_SOURCE_DIR}/local/lib
-    ${CMAKE_SOURCE_DIR}/MultiScaleOT/build/Common
-    ${CMAKE_SOURCE_DIR}/MultiScaleOT/build/LP_Lemon
-    ${CMAKE_SOURCE_DIR}/MultiScaleOT/build/ShortCutSolver
 )
 
 find_library(LEMON libemon.a)
 
 option(ULMON_COMPILE_TESTS "Flag to compile tests" ON)
 add_subdirectory(test)
+
+option(ULMON_COMPILE_BENCHMARK "Flag to compile benchmarks" ON)
+if(ULMON_COMPILE_BENCHMARK)
+    add_subdirectory(benchmark)
+endif()
