@@ -58,7 +58,25 @@ class DOTmark {
         _dim(dim),
         _filename_pattern(R"(data(\d+)_1(\d+)\.csv)")  // Matches pattern like
                                                        // "data512_1006.csv") {}
-  {}
+  {
+    fs::path output_directory = fs::path(_data_path).parent_path() / "Results";
+    if (!fs::exists(output_directory)) fs::create_directory(output_directory);
+    std::cout << "Results are stored into " << output_directory << std::endl;
+    _output_file =
+        std::ofstream(output_directory / "benchmark_output.txt", std::ios::app);
+    _output_file_detailed = std::ofstream(
+        output_directory / "benchmark_output_detailed.txt", std::ios::app);
+
+    // Open the file stream in append mode to ensure we can add to it
+    if (!_output_file.is_open() || !_output_file_detailed.is_open()) {
+      throw std::runtime_error("Failed to open output file.");
+    }
+  }
+
+  ~DOTmark() {
+    if (_output_file.is_open()) _output_file.close();
+    if (_output_file_detailed.is_open()) _output_file_detailed.close();
+  }
 
   // Load the class directories and their image file paths, organized by
   // resolution
@@ -93,15 +111,15 @@ class DOTmark {
   }
 
   // Run benchmark for all pairs of images within each class
-  void runBenchmark(bool print_all_pairs = false) {
+  void runBenchmark() {
     if (_dim)
-      fmt::printf("%d runs per pair; resolution = %d\n", _runs, _dim);
+      printOutput("%d runs per pair; resolution = %d\n", _runs, _dim);
     else
-      fmt::printf("%d runs per pair; all resolutions\n", _runs);
-    fmt::printf("%7s%17s%3s%3s%4s %9s%11s\n", "dim", "class", "i", "j", "opt",
+      printOutput("%d runs per pair; all resolutions\n", _runs);
+    printOutput("%7s%17s%3s%3s%4s %9s%11s\n", "dim", "class", "i", "j", "opt",
                 "obj", "time [ms]");
-    for (int i = 0; i < 55; ++i) fmt::printf("-");
-    fmt::printf("\n");
+    for (int i = 0; i < 55; ++i) printOutput("-");
+    printOutput("\n");
     for (const int res : _resolutions) {
       for (const auto& [class_name, class_resolutions] : _class_images) {
         auto it = class_resolutions.find(res);
@@ -112,20 +130,18 @@ class DOTmark {
           int n = 0;
           for (size_t i = 0; i < images.size(); ++i) {
             for (size_t j = 0; j < images.size(); ++j) {
-              auto [opt, t_ij] = benchmarkPair(class_name, res, images[i],
-                                               images[j], print_all_pairs);
+              auto [opt, t_ij] =
+                  benchmarkPair(class_name, res, images[i], images[j]);
               t += t_ij;
               optimal &= opt;
               ++n;
             }
           }
-          fmt::printf("%7d%17s%6s%4d %9s%11.1f\n", res, class_name, "", optimal,
+          printOutput("%7d%17s%6s%4d %9s%11.1f\n", res, class_name, "", optimal,
                       "", t / n);
         }
       }
     }
-
-    /// TODO: save results
   }
 
  private:
@@ -136,6 +152,18 @@ class DOTmark {
   std::set<int> _resolutions;
   std::map<std::string, std::map<int, std::vector<std::string>>>
       _class_images;  // class -> resolution -> list of image paths
+  std::ofstream _output_file;
+  std::ofstream _output_file_detailed;
+
+  // Helper function to print to both the console and the file
+  template <typename... Args>
+  void printOutput(const char* format, Args... args) {
+    fmt::printf(format, args...);
+    fmt::printf(_output_file, format, args...);
+    fmt::printf(_output_file_detailed, format, args...);
+    _output_file.flush();
+    _output_file_detailed.flush();
+  }
 
   // Load CSV file as vector
   ValueVector loadCSV(const std::string& filename) {
@@ -171,8 +199,7 @@ class DOTmark {
   std::pair<bool, long double> benchmarkPair(const std::string& class_name,
                                              int resolution,
                                              const std::string& image1,
-                                             const std::string& image2,
-                                             bool print_all_pairs = false) {
+                                             const std::string& image2) {
     ValueVector supply = loadSupply(image1, image2);
     assert(supply.size() == 2 * resolution * resolution);
 
@@ -209,10 +236,10 @@ class DOTmark {
     std::regex_match(name2, match, _filename_pattern);
     j = std::stoi(match[2].str());
 
-    if (print_all_pairs) {
-      fmt::printf("%7d%17s%3d%3d%4d %9.3g%11.1f\n", resolution, class_name, i,
-                  j, optimal, (double)res.objective_value, t / _runs);
-    }
+    fmt::printf(_output_file_detailed, "%7d%17s%3d%3d%4d %9.3g%11.1f\n",
+                resolution, class_name, i, j, optimal,
+                (double)res.objective_value, t / _runs);
+    _output_file_detailed.flush();
     return std::make_pair(optimal, t / _runs);
   }
 };

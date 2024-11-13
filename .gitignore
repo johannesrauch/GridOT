@@ -1,7 +1,7 @@
 # benchmark
 benchmark/Data/
 benchmark/Pictures/
-benchmark/results/
+benchmark/Results/
 
 # build stuff
 build
