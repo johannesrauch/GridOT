@@ -25,10 +25,12 @@ using GridSolver = UlmGridSolver<Graph>;
 
 class DOTmark {
  public:
-  DOTmark(const std::string& dataPath)
-      : dataPath(dataPath),
-        filenamePattern(R"(data(\d+)_1(\d+)\.csv)")  // Matches pattern like
-                                                     // "data512_1006.csv") {}
+  DOTmark(const std::string& data_path, int runs = 1, int dim = 0)
+      : _data_path(data_path),
+        _runs(runs),
+        _dim(dim),
+        _filename_pattern(R"(data(\d+)_1(\d+)\.csv)")  // Matches pattern like
+                                                       // "data512_1006.csv") {}
   {}
 
   // Load the class directories and their image file paths, organized by
@@ -36,24 +38,27 @@ class DOTmark {
   void loadData() {
     std::smatch match;
 
-    for (const auto& classEntry : fs::directory_iterator(dataPath)) {
-      if (classEntry.is_directory()) {
-        std::string className = classEntry.path().filename().string();
+    for (const auto& class_entry : fs::directory_iterator(_data_path)) {
+      if (class_entry.is_directory()) {
+        std::string class_name = class_entry.path().filename().string();
 
         // Gather all CSV files within this class directory and organize by
         // resolution
-        for (const auto& fileEntry :
-             fs::directory_iterator(classEntry.path())) {
-          std::string filename = fileEntry.path().filename().string();
+        for (const auto& file_entry :
+             fs::directory_iterator(class_entry.path())) {
+          std::string filename = file_entry.path().filename().string();
 
-          if (std::regex_match(filename, match, filenamePattern)) {
+          if (std::regex_match(filename, match, _filename_pattern)) {
             int resolution = std::stoi(
                 match[1].str());  // Resolution extracted from filename
-            std::string filepath = fileEntry.path().string();
+            // If _dim is given, only store images with resolution _dim
+            if (!_dim || resolution == _dim) {
+              std::string filepath = file_entry.path().string();
 
-            // Store the image path under its class and resolution
-            classImages[className][resolution].push_back(filepath);
-            resolutions.insert(resolution);
+              // Store the image path under its class and resolution
+              _class_images[class_name][resolution].push_back(filepath);
+              _resolutions.insert(resolution);
+            }
           }
         }
       }
@@ -62,14 +67,20 @@ class DOTmark {
 
   // Run benchmark for all pairs of images within each class
   void runBenchmark() {
+    if (_dim)
+      fmt::printf("%d runs per pair; resolution = %d\n", _runs, _dim);
+    else
+      fmt::printf("%d runs per pair; all resolutions\n", _runs);
     fmt::printf("%7s%15s%3s%3s%4s %9s%10s\n", "dim", "class", "i", "j", "opt",
                 "obj", "time [ms]");
-    for (const int res : resolutions) {
-      for (const auto& [className, classResolutions] : classImages) {
-        const auto& images = classResolutions.at(res);
+    for (int i = 0; i < 52; ++i) fmt::printf("-");
+    fmt::printf("\n");
+    for (const int res : _resolutions) {
+      for (const auto& [class_name, class_resolutions] : _class_images) {
+        const auto& images = class_resolutions.at(res);
         for (size_t i = 0; i < images.size(); ++i) {
           for (size_t j = 0; j < images.size(); ++j) {
-            benchmarkPair(className, res, images[i], images[j]);
+            benchmarkPair(class_name, res, images[i], images[j]);
           }
         }
       }
@@ -79,11 +90,13 @@ class DOTmark {
   }
 
  private:
-  std::string dataPath;  // Path to DOTmark data
-  std::regex filenamePattern;
-  std::set<int> resolutions;
+  const std::string _data_path;  // Path to DOTmark data
+  const int _runs;
+  const int _dim;
+  const std::regex _filename_pattern;
+  std::set<int> _resolutions;
   std::map<std::string, std::map<int, std::vector<std::string>>>
-      classImages;  // class -> resolution -> list of image paths
+      _class_images;  // class -> resolution -> list of image paths
 
   // Load CSV file as vector
   ValueVector loadCSV(const std::string& filename) {
@@ -92,11 +105,11 @@ class DOTmark {
     std::string line;
 
     while (std::getline(file, line)) {
-      std::istringstream lineStream(line);
+      std::istringstream line_stream(line);
       std::string cell;
 
       // Read each cell in the line, split by comma
-      while (std::getline(lineStream, cell, ',')) {
+      while (std::getline(line_stream, cell, ',')) {
         data.push_back(std::stoi(cell));
       }
     }
@@ -109,28 +122,35 @@ class DOTmark {
     ValueVector supply = loadCSV(source);
     ValueVector demand = loadCSV(target);
 
-    ValueVector signedSupply = supply;
-    for (Value v : demand) signedSupply.push_back(-v);
+    ValueVector signed_supply = supply;
+    for (Value v : demand) signed_supply.push_back(-v);
 
-    return signedSupply;
+    return signed_supply;
   }
 
   // Benchmark function to run OT on each image pair
-  void benchmarkPair(const std::string& className, int resolution,
+  void benchmarkPair(const std::string& class_name, int resolution,
                      const std::string& image1, const std::string& image2) {
     ValueVector supply = loadSupply(image1, image2);
     assert(supply.size() == 2 * resolution * resolution);
 
     // Measure time taken by the solver
-    Int2Array dim = {resolution, resolution};
-    Graph graph(dim, dim, supply);
-    GridSolver solver(graph);
+    long double t = 0;
+    bool optimal = true;
     Results res;
-    res.tic();
-    res.return_value = solver.run();
-    res.toc();
-    res.objective_value = solver.totalCost();
-    bool optimal = res.return_value == GridSolver::NetSimplex::OPTIMAL;
+    for (int it = 0; it < _runs; ++it) {
+      Int2Array dim = {resolution, resolution};
+      Graph graph(dim, dim, supply);
+      GridSolver solver(graph);
+      res.tic();
+      res.return_value = solver.run();
+      res.toc();
+      t += res.t_ms;
+      optimal &= res.return_value == GridSolver::NetSimplex::OPTIMAL;
+      if (res.objective_value)
+        assert(res.objective_value == solver.totalCost());
+      res.objective_value = solver.totalCost();
+    }
     if (res.objective_value < 0) {
       fmt::printf("Integer overflow!!!\n");
     }
@@ -138,17 +158,17 @@ class DOTmark {
     // get image number
     int i, j;
     std::smatch match;
-    std::filesystem::path pathObj1(image1);
-    std::filesystem::path pathObj2(image2);
-    std::string name1 = pathObj1.filename().string();
-    std::string name2 = pathObj2.filename().string();
-    std::regex_match(name1, match, filenamePattern);
+    std::filesystem::path path1(image1);
+    std::filesystem::path path2(image2);
+    std::string name1 = path1.filename().string();
+    std::string name2 = path2.filename().string();
+    std::regex_match(name1, match, _filename_pattern);
     i = std::stoi(match[2].str());
-    std::regex_match(name2, match, filenamePattern);
+    std::regex_match(name2, match, _filename_pattern);
     j = std::stoi(match[2].str());
 
-    fmt::printf("%7d%15s%3d%3d%4d %9.3g%10.1f\n", resolution, className, i, j,
-                optimal, (double)res.objective_value, res.t_ms);
+    fmt::printf("%7d%15s%3d%3d%4d %9.3g%10.1f\n", resolution, class_name, i, j,
+                optimal, (double)res.objective_value, t / _runs);
   }
 };
 

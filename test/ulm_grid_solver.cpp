@@ -1,6 +1,6 @@
-#include <ulmon/ulm_grid_solver.h>
-#include <ulmon/ulm_grid_graph.h>
 #include <ulmon/test/instance.h>
+#include <ulmon/ulm_grid_graph.h>
+#include <ulmon/ulm_grid_solver.h>
 
 #ifndef ULMON_CONST_D
 #ifndef NDEBUG
@@ -25,9 +25,9 @@
 using namespace lemon;
 using namespace lemon::test;
 
-using Graph = UlmGridGraph<>;
+using Graph = UlmGridGraph<Value, Cost>;
 using TestSolver = UlmGridSolver<Graph>;
-using TestSubsolver = UlmNetworkSimplex<Graph>;
+using TestSubsolver = UlmNetworkSimplex<Graph, Value>;
 
 /// \brief Test subsolve method
 void testSubsolve(const Int2Array dims) {
@@ -52,7 +52,8 @@ void testSubsolve(const Int2Array dims) {
     // Test
     Graph testG(dims, dims, supply, true);
     testG.reserveArcs(n);
-    for (int i = 0; i < n; ++i) testG.addArc(testG.redNode(i), testG.blueNode(i));
+    for (int i = 0; i < n; ++i)
+      testG.addArc(testG.redNode(i), testG.blueNode(i));
     TestSolver testS(testG);
     TestSubsolver testSub(testG);
     Results t;
@@ -70,8 +71,8 @@ void testSubsolve(const Int2Array dims) {
   }
 
   t_ref /= ULMON_CONST_IT, t_test /= ULMON_CONST_IT;
-  fmt::printf("\r%7s%3dx%3d%7d%7.1f%7.1f%7d\n", "sub", dims[0], dims[1], ULMON_CONST_IT,
-              t_ref, t_test, ok);
+  fmt::printf("\r%7s%3dx%3d%7d%7.1f%7.1f%7d\n", "sub", dims[0], dims[1],
+              ULMON_CONST_IT, t_ref, t_test, ok);
 }
 
 /// \brief Test run method
