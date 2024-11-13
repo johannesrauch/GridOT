@@ -10,7 +10,7 @@ target_link_libraries(run_dotmark libemon.a)
 
 set_target_properties(run_dotmark
     PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/benchmarks
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/benchmark
 )
 
 # Set BENCHMARK_DATA_DIRECTORY if the data directory exists

@@ -3,7 +3,6 @@
 #ifndef DOTMARK_H
 #define DOTMARK_H
 
-#include <ulmon/test/instance.h>
 #include <ulmon/ulm_grid_graph.h>
 #include <ulmon/ulm_grid_solver.h>
 
@@ -12,13 +11,41 @@
 #include <iostream>
 #include <map>
 #include <regex>
+#include <set>
 #include <string>
 #include <vector>
 
 using namespace lemon;
-using namespace lemon::test;
 
 namespace fs = std::filesystem;
+
+using Value = int;  // Supply / demand type, signed
+using Cost = int;   // Cost type, signed
+using TotalCost = long int;
+using ValueVector = std::vector<Value>;
+
+struct Results {
+  TotalCost objective_value{0};
+  int return_value{0};
+  long double t_ms{0};
+  std::clock_t t0;
+
+  Results() : t0(std::clock()) {}
+
+  void tic() { t0 = std::clock(); }
+
+  /**
+   * @brief Returns and saves the cpu time in ms since the construction of the
+   * object or the latest call to tic().
+   *
+   * @return long double Cpu time in ms
+   */
+  long double toc() {
+    t_ms =
+        static_cast<long double>(1000.) * (std::clock() - t0) / CLOCKS_PER_SEC;
+    return t_ms;
+  }
+};
 
 using Graph = UlmGridGraph<Value, Cost>;
 using GridSolver = UlmGridSolver<Graph>;
@@ -66,22 +93,34 @@ class DOTmark {
   }
 
   // Run benchmark for all pairs of images within each class
-  void runBenchmark() {
+  void runBenchmark(bool print_all_pairs = false) {
     if (_dim)
       fmt::printf("%d runs per pair; resolution = %d\n", _runs, _dim);
     else
       fmt::printf("%d runs per pair; all resolutions\n", _runs);
-    fmt::printf("%7s%15s%3s%3s%4s %9s%10s\n", "dim", "class", "i", "j", "opt",
+    fmt::printf("%7s%17s%3s%3s%4s %9s%11s\n", "dim", "class", "i", "j", "opt",
                 "obj", "time [ms]");
-    for (int i = 0; i < 52; ++i) fmt::printf("-");
+    for (int i = 0; i < 55; ++i) fmt::printf("-");
     fmt::printf("\n");
     for (const int res : _resolutions) {
       for (const auto& [class_name, class_resolutions] : _class_images) {
-        const auto& images = class_resolutions.at(res);
-        for (size_t i = 0; i < images.size(); ++i) {
-          for (size_t j = 0; j < images.size(); ++j) {
-            benchmarkPair(class_name, res, images[i], images[j]);
+        auto it = class_resolutions.find(res);
+        if (it != class_resolutions.end()) {
+          const auto& images = it->second;
+          long double t = 0;
+          bool optimal = true;
+          int n = 0;
+          for (size_t i = 0; i < images.size(); ++i) {
+            for (size_t j = 0; j < images.size(); ++j) {
+              auto [opt, t_ij] = benchmarkPair(class_name, res, images[i],
+                                               images[j], print_all_pairs);
+              t += t_ij;
+              optimal &= opt;
+              ++n;
+            }
           }
+          fmt::printf("%7d%17s%6s%4d %9s%11.1f\n", res, class_name, "", optimal,
+                      "", t / n);
         }
       }
     }
@@ -128,9 +167,12 @@ class DOTmark {
     return signed_supply;
   }
 
-  // Benchmark function to run OT on each image pair
-  void benchmarkPair(const std::string& class_name, int resolution,
-                     const std::string& image1, const std::string& image2) {
+  // Benchmark function to run OT on an image pair
+  std::pair<bool, long double> benchmarkPair(const std::string& class_name,
+                                             int resolution,
+                                             const std::string& image1,
+                                             const std::string& image2,
+                                             bool print_all_pairs = false) {
     ValueVector supply = loadSupply(image1, image2);
     assert(supply.size() == 2 * resolution * resolution);
 
@@ -139,7 +181,7 @@ class DOTmark {
     bool optimal = true;
     Results res;
     for (int it = 0; it < _runs; ++it) {
-      Int2Array dim = {resolution, resolution};
+      std::array<int, 2> dim = {resolution, resolution};
       Graph graph(dim, dim, supply);
       GridSolver solver(graph);
       res.tic();
@@ -148,8 +190,8 @@ class DOTmark {
       t += res.t_ms;
       optimal &= res.return_value == GridSolver::NetSimplex::OPTIMAL;
       if (res.objective_value)
-        assert(res.objective_value == solver.totalCost());
-      res.objective_value = solver.totalCost();
+        assert(res.objective_value == solver.totalCost<TotalCost>());
+      res.objective_value = solver.totalCost<TotalCost>();
     }
     if (res.objective_value < 0) {
       fmt::printf("Integer overflow!!!\n");
@@ -167,8 +209,11 @@ class DOTmark {
     std::regex_match(name2, match, _filename_pattern);
     j = std::stoi(match[2].str());
 
-    fmt::printf("%7d%15s%3d%3d%4d %9.3g%10.1f\n", resolution, class_name, i, j,
-                optimal, (double)res.objective_value, t / _runs);
+    if (print_all_pairs) {
+      fmt::printf("%7d%17s%3d%3d%4d %9.3g%11.1f\n", resolution, class_name, i,
+                  j, optimal, (double)res.objective_value, t / _runs);
+    }
+    return std::make_pair(optimal, t / _runs);
   }
 };
 

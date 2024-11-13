@@ -101,7 +101,10 @@ class UlmGridSolver {
     return r;
   }
 
-  Cost totalCost() const { return _net.totalCost(); }
+  template <typename Number = Cost>
+  Number totalCost() const {
+    return _net.template totalCost<Number>();
+  }
 
   Value flow(Arc a) const { return _net.flow(a); }
 

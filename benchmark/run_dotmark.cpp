@@ -6,6 +6,7 @@
 int main(int argc, char** argv) {
   int runs = 5;        // runs per pair
   int resolution = 0;  // 0: run all resolutions
+  bool print_all_pairs = false;
 
   const char* data_directory;
   int data_arg = 0;
@@ -26,7 +27,7 @@ int main(int argc, char** argv) {
 
   DOTmark benchmark(data_directory, runs, resolution);
   benchmark.loadData();
-  benchmark.runBenchmark();
+  benchmark.runBenchmark(print_all_pairs);
 
   return 0;
 }
