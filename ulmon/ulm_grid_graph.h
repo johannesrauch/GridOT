@@ -303,12 +303,10 @@ class UlmGridGraph : public SmartBpDigraph {
   /// arcs from the support
   ///
   /// support_arcs[i] = a is the arc corresponding to support[i] = (x,y)
-  void rebuildShield(                   //
-      const SupportVector& support,     //
-      const ValueVector& support_flow,  //
+  void rebuildShield(                //
+      const SupportVector& support,  //
       ArcVector& support_arcs) {
     assert(std::is_sorted(support.begin(), support.end()));
-    assert(support.size() == support_flow.size());
     support_arcs.clear();
     support_arcs.resize(support.size(), arcFromId(-1));
 
@@ -316,7 +314,8 @@ class UlmGridGraph : public SmartBpDigraph {
     resetShield();
     int i = 0;
     for (const auto& [x, y] : support)
-      if (support_flow[i++]) updateShield(x, y);
+      // if (support_flow[i++]) // Not necessary (tree: dual constraints "=")
+      updateShield(x, y);
     clearArcs();
     reserveArcs(utils::numArcs(_y_min, _y_max) + _node_num);
 

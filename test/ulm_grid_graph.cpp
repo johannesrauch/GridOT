@@ -232,10 +232,9 @@ void testRebuildShield3() {
   SupportVector support;
   for (int i = 0; i < n * n; ++i)
     support.emplace_back(graph.redNode(i), graph.blueNode(i));
-  ValueVector support_flow(support.size(), 1);
 
   typename Graph::ArcVector support_arcs;
-  graph.rebuildShield(support, support_flow, support_arcs);
+  graph.rebuildShield(support, support_arcs);
   assert(support.size() == support_arcs.size());
   assert(countArcs(graph) == 4 * 4 + 4 * (n - 2) * 6 + (n - 2) * (n - 2) * 9);
 
