@@ -20,7 +20,7 @@ using namespace lemon::test;
 
 namespace fs = std::filesystem;
 
-using Graph = UlmGridGraph<>;
+using Graph = UlmGridGraph<Value, Cost>;
 using GridSolver = UlmGridSolver<Graph>;
 
 class DOTmark {
