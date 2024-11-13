@@ -1,7 +1,7 @@
-// dotmark.hpp
+// dotmark.h
 
-#ifndef DOTMARK_HPP
-#define DOTMARK_HPP
+#ifndef DOTMARK_H
+#define DOTMARK_H
 
 #include <ulmon/test/instance.h>
 #include <ulmon/ulm_grid_graph.h>
@@ -172,4 +172,4 @@ class DOTmark {
   }
 };
 
-#endif  // DOTMARK_HPP
+#endif  // DOTMARK_H

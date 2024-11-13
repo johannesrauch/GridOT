@@ -5,7 +5,7 @@
 using namespace lemon;
 using namespace lemon::test;
 
-using Graph = UlmGridGraph<>;
+using Graph = UlmGridGraph<Value, Cost>;
 TEMPLATE_BPDIGRAPH_TYPEDEFS(Graph);
 using Ref = NetworkSimplex<Graph, typename Graph::Value, typename Graph::Cost>;
 

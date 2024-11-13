@@ -1,6 +1,6 @@
 // run_benchmark.cpp
 
-#include <benchmark/dotmark.hpp>
+#include <benchmark/dotmark.h>
 
 // Main function to run the benchmark
 int main(int argc, char** argv) {

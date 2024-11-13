@@ -1,6 +1,6 @@
 set(BENCHMARK_SOURCES
     run_dotmark.cpp
-    dotmark.hpp
+    dotmark.h
 )
 
 # Add the executable for the DOTmark benchmark

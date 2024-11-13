@@ -8,9 +8,8 @@
 #endif
 
 using namespace lemon;
+using namespace lemon::test;
 
-using Value = int;
-using Cost = int;
 using ValueVector = std::vector<Value>;
 using Int2Array = std::array<int, 2>;
 
