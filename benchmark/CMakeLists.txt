@@ -3,10 +3,20 @@ set(BENCHMARK_SOURCES
     dotmark.h
 )
 
+include_directories(
+    ./MultiScaleOT/src
+)
+
+link_directories(
+    ./MultiScaleOT/build/Common
+    ./MultiScaleOT/build/LP_Lemon
+    ./MultiScaleOT/build/ShortCutSolver
+)
+
 # Add the executable for the DOTmark benchmark
 add_executable(run_dotmark ${BENCHMARK_SOURCES})
 
-target_link_libraries(run_dotmark libemon.a)
+target_link_libraries(run_dotmark libShortCutSolver.a libLP_Lemon.a libCommon.a libemon.a)
 
 set_target_properties(run_dotmark
     PROPERTIES

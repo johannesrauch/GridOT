@@ -3,8 +3,7 @@
 #ifndef DOTMARK_H
 #define DOTMARK_H
 
-#include <ulmon/ulm_grid_graph.h>
-#include <ulmon/ulm_grid_solver.h>
+#include <benchmark/solvers.h>
 
 #include <filesystem>
 #include <fstream>
@@ -15,40 +14,9 @@
 #include <string>
 #include <vector>
 
-using namespace lemon;
-
 namespace fs = std::filesystem;
 
-using Value = int;  // Supply / demand type, signed
-using Cost = int;   // Cost type, signed
-using TotalCost = long int;
-using ValueVector = std::vector<Value>;
-
-struct Results {
-  TotalCost objective_value{0};
-  int return_value{0};
-  long double t_ms{0};
-  std::clock_t t0;
-
-  Results() : t0(std::clock()) {}
-
-  void tic() { t0 = std::clock(); }
-
-  /**
-   * @brief Returns and saves the cpu time in ms since the construction of the
-   * object or the latest call to tic().
-   *
-   * @return long double Cpu time in ms
-   */
-  long double toc() {
-    t_ms =
-        static_cast<long double>(1000.) * (std::clock() - t0) / CLOCKS_PER_SEC;
-    return t_ms;
-  }
-};
-
-using Graph = UlmGridGraph<Value, Cost>;
-using GridSolver = UlmGridSolver<Graph>;
+namespace benchmark {
 
 class DOTmark {
  public:
@@ -125,20 +93,24 @@ class DOTmark {
         auto it = class_resolutions.find(res);
         if (it != class_resolutions.end()) {
           const auto& images = it->second;
-          long double t = 0;
-          bool optimal = true;
+          long double t = 0, t_ref = 0;
+          bool optimal = true, optimal_ref = true;
           int n = 0;
           for (size_t i = 0; i < images.size(); ++i) {
             for (size_t j = 0; j < images.size(); ++j) {
-              auto [opt, t_ij] =
+              auto [opt, t_ij, opt_ref, t_ref_ij] =
                   benchmarkPair(class_name, res, images[i], images[j]);
               t += t_ij;
+              t_ref += t_ref_ij;
               optimal &= opt;
+              optimal_ref &= opt_ref;
               ++n;
             }
           }
-          printOutput("%7d%17s%6s%4d %9s%11.1f\n", res, class_name, "", optimal,
-                      "", t / n);
+          printOutput("%7d%17s%6s%4d %9s%11.1f   GridOT\n", res, class_name, "",
+                      optimal, "", t / n);
+          printOutput("%7d%17s%6s%4d %9s%11.1f   MultiScaleOT\n", res,
+                      class_name, "", optimal_ref, "", t_ref / n);
         }
       }
     }
@@ -196,31 +168,33 @@ class DOTmark {
   }
 
   // Benchmark function to run OT on an image pair
-  std::pair<bool, long double> benchmarkPair(const std::string& class_name,
-                                             int resolution,
-                                             const std::string& image1,
-                                             const std::string& image2) {
+  std::tuple<bool, long double, bool, long double> benchmarkPair(
+      const std::string& class_name, int resolution, const std::string& image1,
+      const std::string& image2) {
     ValueVector supply = loadSupply(image1, image2);
     assert(supply.size() == 2 * resolution * resolution);
 
     // Measure time taken by the solver
-    long double t = 0;
-    bool optimal = true;
-    Results res;
+    long double t = 0, t_ref = 0;
+    TotalCost obj = 0, obj_ref = 0;
+    bool optimal = true, optimal_ref = true;
     for (int it = 0; it < _runs; ++it) {
       std::array<int, 2> dim = {resolution, resolution};
       Graph graph(dim, dim, supply);
-      GridSolver solver(graph);
-      res.tic();
-      res.return_value = solver.run();
-      res.toc();
+      Results res = gridSolver(graph);
       t += res.t_ms;
       optimal &= res.return_value == GridSolver::NetSimplex::OPTIMAL;
-      if (res.objective_value)
-        assert(res.objective_value == solver.totalCost<TotalCost>());
-      res.objective_value = solver.totalCost<TotalCost>();
+      if (obj) assert(obj == res.objective_value);
+      obj = res.objective_value;
+
+      Results resRef = schmitzerMultiScale(
+          dim.data(), supply, lemon::utils::hierarchicalDepth(dim, dim, 2) + 1);
+      t_ref += resRef.t_ms;
+      optimal_ref &= resRef.return_value;
+      if (obj_ref) assert(obj_ref == resRef.objective_value);
+      obj_ref = resRef.objective_value;
     }
-    if (res.objective_value < 0) {
+    if (obj < 0) {
       fmt::printf("Integer overflow!!!\n");
     }
 
@@ -236,12 +210,17 @@ class DOTmark {
     std::regex_match(name2, match, _filename_pattern);
     j = std::stoi(match[2].str());
 
-    fmt::printf(_output_file_detailed, "%7d%17s%3d%3d%4d %9.3g%11.1f\n",
-                resolution, class_name, i, j, optimal,
-                (double)res.objective_value, t / _runs);
+    fmt::printf(_output_file_detailed,
+                "%7d%17s%3d%3d%4d %9.3g%11.1f   GridOT\n", resolution,
+                class_name, i, j, optimal, (double)obj, t / _runs);
+    fmt::printf(_output_file_detailed,
+                "%7d%17s%3d%3d%4d %9.3g%11.1f   MultiScaleOT\n", resolution,
+                class_name, i, j, optimal_ref, (double)obj_ref, t_ref / _runs);
     _output_file_detailed.flush();
-    return std::make_pair(optimal, t / _runs);
+    return std::make_tuple(optimal, t / _runs, optimal_ref, t_ref / _runs);
   }
 };
+
+}  // namespace benchmark
 
 #endif  // DOTMARK_H

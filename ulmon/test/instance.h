@@ -21,8 +21,9 @@ using ValueVector = std::vector<Value>;
 using CostVector = std::vector<Cost>;
 using PosVector = std::vector<Int2Array>;
 
+template <typename TotalCost = Cost>
 struct Results {
-  Cost objective_value{0};
+  TotalCost objective_value{0};
   int return_value{0};
   long double t_ms{0};
   std::clock_t t0;
@@ -125,8 +126,8 @@ ValueVector getRandomSupply(const int nx, const int ny) {
 //
 
 template <typename Graph, typename SupplyMap, typename CostMap>
-Results lemonBS(const Graph& graph, const SupplyMap& supplyMap,
-                const CostMap& costMap) {
+Results<> lemonBS(const Graph& graph, const SupplyMap& supplyMap,
+                  const CostMap& costMap) {
   using NetSimplex = NetworkSimplex<Graph, Value, Cost>;
   NetSimplex net(graph);
   net.supplyMap(supplyMap).costMap(costMap);

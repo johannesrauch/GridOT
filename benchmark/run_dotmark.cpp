@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
   if (argc >= 2 + data_arg) runs = std::atoi(argv[1 + data_arg]);
   if (argc >= 3 + data_arg) resolution = std::atoi(argv[2 + data_arg]);
 
-  DOTmark benchmark(data_directory, runs, resolution);
+  benchmark::DOTmark benchmark(data_directory, runs, resolution);
   benchmark.loadData();
   benchmark.runBenchmark();
 
