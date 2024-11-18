@@ -37,6 +37,10 @@ class UlmGridSolver {
   bool _called_run{false};
 
  public:
+  // Statistics
+  std::vector<std::vector<double>> _densities;
+
+ public:
   UlmGridSolver(GR& graph, const int merge_num = 2)
       : _graph(graph),
         _net(graph, false),
@@ -44,6 +48,7 @@ class UlmGridSolver {
         _max_depth(
             utils::hierarchicalDepth(_graph._x_dim, _graph._y_dim, merge_num)) {
     _support.reserve(countNodes(_graph));
+    _densities.reserve(_max_depth + 1);
   }
 
   ProblemType run() {
@@ -64,7 +69,9 @@ class UlmGridSolver {
     typename GR::SupplyNodeMap supplyMap(graph);
     typename GR::CostArcMap costMap(graph);
     net.supplyMap(supplyMap).costMap(costMap);
-    return net.runShielded();
+    ProblemType res = net.runShielded();
+    _densities.push_back(net._density);
+    return res;
   }
 
   ProblemType _subsolve(GR& graph, NetSimplex& net) {

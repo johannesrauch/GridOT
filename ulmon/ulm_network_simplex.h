@@ -239,6 +239,9 @@ class UlmNetworkSimplex {
   const Value MAX;
 
  public:
+  // shielded pivot rule statistics
+  std::vector<double> _density;
+
   /// \brief Constant for infinite upper bounds (capacities).
   ///
   /// Constant for infinite upper bounds (capacities).
@@ -714,6 +717,9 @@ class UlmNetworkSimplex {
     ValueVector _support_flow;
     IntVector _perm, _inv_perm;
 
+    // statistics
+    std::vector<double> &_density;
+
     // Search function ptr
     bool (ShieldedPivotRule::*_search)();
 
@@ -749,6 +755,7 @@ class UlmNetworkSimplex {
           INF(ns.INF),
           _next_arc(_search_arc_begin),
           _search_begin(_search_arc_begin),
+          _density(ns._density),
           _search(&ShieldedPivotRule::firstEligible) {
       _block_size =
           std::max(int(BLOCK_SIZE_FACTOR *
@@ -996,6 +1003,8 @@ class UlmNetworkSimplex {
       // New _arc_num and _arc_end
       _arc_num = countArcs(_graph);
       _arc_end = _arc_begin + _arc_num;
+      _density.push_back(static_cast<double>(_arc_num) /
+                         (_graph.redNum() * _graph.blueNum()));
 
       // Resize
       _source.resize(_arc_end);
@@ -1274,6 +1283,8 @@ class UlmNetworkSimplex {
   }
 
   ProblemType runShielded() {
+    _density.push_back(static_cast<double>(_arc_num) /
+                       (_graph.redNum() * _graph.blueNum()));
     if (!init()) return INFEASIBLE;
     return start<ShieldedPivotRule>();
   }

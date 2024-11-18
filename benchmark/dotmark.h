@@ -34,9 +34,12 @@ class DOTmark {
         std::ofstream(output_directory / "benchmark_output.txt", std::ios::app);
     _output_file_detailed = std::ofstream(
         output_directory / "benchmark_output_detailed.txt", std::ios::app);
+    _statistics_file = std::ofstream(
+        output_directory / "benchmark_statistics_gridOT.txt", std::ios::app);
 
     // Open the file stream in append mode to ensure we can add to it
-    if (!_output_file.is_open() || !_output_file_detailed.is_open()) {
+    if (!_output_file.is_open() || !_output_file_detailed.is_open() ||
+        !_statistics_file.is_open()) {
       throw std::runtime_error("Failed to open output file.");
     }
   }
@@ -44,6 +47,7 @@ class DOTmark {
   ~DOTmark() {
     if (_output_file.is_open()) _output_file.close();
     if (_output_file_detailed.is_open()) _output_file_detailed.close();
+    if (_statistics_file.is_open()) _statistics_file.close();
   }
 
   // Load the class directories and their image file paths, organized by
@@ -126,6 +130,7 @@ class DOTmark {
       _class_images;  // class -> resolution -> list of image paths
   std::ofstream _output_file;
   std::ofstream _output_file_detailed;
+  std::ofstream _statistics_file;
 
   // Helper function to print to both the console and the file
   template <typename... Args>
@@ -167,6 +172,20 @@ class DOTmark {
     return signed_supply;
   }
 
+  void print_statistics(const int resolution, const std::string& class_name,
+                        const int i, const int j,
+                        const std::vector<std::vector<double>>& densities) {
+    fmt::printf(_statistics_file, "%s (%dx%d): %d->%d:\n", class_name,
+                resolution, resolution, i, j);
+    for (const auto& level : densities) {
+      for (const auto& density : level) {
+        fmt::printf(_statistics_file, "%9.3g ", density);
+      }
+      fmt::printf(_statistics_file, "\n");
+    }
+    _statistics_file.flush();
+  }
+
   // Benchmark function to run OT on an image pair
   std::tuple<bool, long double, bool, long double> benchmarkPair(
       const std::string& class_name, int resolution, const std::string& image1,
@@ -178,14 +197,16 @@ class DOTmark {
     long double t = 0, t_ref = 0;
     TotalCost obj = 0, obj_ref = 0;
     bool optimal = true, optimal_ref = true;
+    std::vector<std::vector<double>> densities;
     for (int it = 0; it < _runs; ++it) {
       std::array<int, 2> dim = {resolution, resolution};
       Graph graph(dim, dim, supply);
-      Results res = gridSolver(graph);
+      auto [res, new_densities] = gridSolver(graph);
       t += res.t_ms;
       optimal &= res.return_value == GridSolver::NetSimplex::OPTIMAL;
       if (obj) assert(obj == res.objective_value);
       obj = res.objective_value;
+      densities = new_densities;
 
       Results resRef = schmitzerMultiScale(
           dim.data(), supply, lemon::utils::hierarchicalDepth(dim, dim, 2) + 1);
@@ -217,6 +238,7 @@ class DOTmark {
                 "%7d%17s%3d%3d%4d %9.3g%11.1f   MultiScaleOT\n", resolution,
                 class_name, i, j, optimal_ref, (double)obj_ref, t_ref / _runs);
     _output_file_detailed.flush();
+    print_statistics(resolution, class_name, i, j, densities);
     return std::make_tuple(optimal, t / _runs, optimal_ref, t_ref / _runs);
   }
 };

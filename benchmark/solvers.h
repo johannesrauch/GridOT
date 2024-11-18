@@ -21,14 +21,15 @@ using Graph = UlmGridGraph<Value, Cost>;
 using GridSolver = UlmGridSolver<Graph>;
 
 // apply GridSolver
-Results gridSolver(Graph& graph) {
+auto gridSolver(Graph& graph) {
   GridSolver solver(graph);
   Results res;
   res.tic();
   res.return_value = solver.run();
   res.toc();
   res.objective_value = solver.totalCost<TotalCost>();
-  return res;
+  std::vector<std::vector<double>> densities = solver._densities;
+  return std::make_pair(res, densities);
 }
 
 // Adapted from Schmitzer's MultiScaleOT/src/Examples/ShortCut.cpp
