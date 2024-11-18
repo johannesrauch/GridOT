@@ -1,0 +1,3 @@
+[submodule "benchmark/MultiScaleOT"]
+	path = benchmark/MultiScaleOT
+	url = https://github.com/bernhard-schmitzer/MultiScaleOT
