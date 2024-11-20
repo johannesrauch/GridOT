@@ -7,6 +7,10 @@
 #define ULMON_GRID_DIM 8
 #endif
 
+#ifndef ULMON_CONST_DENSITY
+#define ULMON_CONST_DENSITY .5
+#endif
+
 using namespace lemon;
 using namespace lemon::test;
 
@@ -248,7 +252,7 @@ int main(int argc, char** argv) {
               muXdim[0], muXdim[1], muYdim[0], muYdim[1]);
 
   // Supply
-  ValueVector supply(test::getRandomSupply(nx, ny));
+  ValueVector supply(test::getRandomSupply(nx, ny, 1));
 
   // ---------------- sum supplies = 0 (GEQ) -----------------------------
   // Graph, and supply and cost map
@@ -305,6 +309,18 @@ int main(int argc, char** argv) {
   makeBoundsForLeq(graphL, supplyMapL, upperMapL, lowerMapL);
   testSolverWithBounds(graphL, supplyMapL, costMapL, lowerMapL, upperMapL,
                        Ref::LEQ, Test::LEQ);
+
+  // ------ sum supplies = 0 (GEQ), sup[i] = 0 for some i -----------------
+  // Supply
+  ValueVector sparseSupply = test::getRandomSupply(nx, ny, ULMON_CONST_DENSITY);
+
+  // Graph, and supply and cost map
+  Graph graphSparse(muXdim, muYdim, sparseSupply, true);
+  SupplyNodeMap supplyMapSparse(graphSparse);
+  CostArcMap costMapSparse(graphSparse);
+
+  // test solvers without LB/UB
+  testSolver(graphSparse, supplyMapSparse, costMapSparse, Ref::GEQ, Test::GEQ);
 
   fmt::printf("Okay\n");
   return 0;

@@ -1,7 +1,7 @@
 #include <lemon/network_simplex.h>
+#include <ulmon/test/instance.h>
 #include <ulmon/ulm_grid_graph.h>
 #include <ulmon/ulm_network_simplex.h>
-#include <ulmon/test/instance.h>
 
 #ifndef ULMON_CONST_D
 #ifndef NDEBUG
@@ -21,6 +21,10 @@
 
 #ifndef ULMON_CONST_IT
 #define ULMON_CONST_IT 5
+#endif
+
+#ifndef ULMON_CONST_DENSITY
+#define ULMON_CONST_DENSITY .4
 #endif
 
 using namespace lemon;
@@ -47,7 +51,7 @@ void testShielded1(const int n) {
     fmt::printf(".");
 
     // Marginals
-    ValueVector supply = getRandomSupply(nx, ny);
+    ValueVector supply = getRandomSupply(nx, ny, ULMON_CONST_DENSITY);
 
     // Reference
     Graph refG(muXdim, muYdim, supply, true);
@@ -73,7 +77,7 @@ void testShielded1(const int n) {
   fmt::printf("OK\n");
 }
 
-/// \brief Test shielded pivot rule on incomplete bipartite graphs 
+/// \brief Test shielded pivot rule on incomplete bipartite graphs
 void testShielded2(const int n) {
   fmt::printf("testShielded2(%d):\t", n);
   using Ref = NetworkSimplex<Graph>;
@@ -98,7 +102,7 @@ void testShielded2(const int n) {
 
     // Marginals
     ValueVector supply;
-    setupSupply(nx, ny, supply);
+    setupSupply(nx, ny, supply, ULMON_CONST_DENSITY);
 
     Graph refG(muXdim, muYdim, supply, true);
     SupplyNodeMap refSupply(refG);

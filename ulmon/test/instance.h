@@ -69,23 +69,31 @@ inline Value upscaledTotalSupply(const int& nx, const int& ny) {
  * @param out_end End
  */
 template <typename It>
-void fillSupply(Value totalSupply, It out_it, It out_end) {
+void fillSupply(Value totalSupply, It out_it, It out_end,
+                const double density) {
   std::size_t n = std::distance(out_it, out_end);
+  std::size_t npos = std::distance(out_it, out_end) * density;
   std::set<Value> set;  // To generate distinct values
   set.insert(0);
   set.insert(totalSupply);
   std::uniform_int_distribution<Value> dist(1, totalSupply - 1);
-  while (set.size() <= n) set.insert(dist(mt));
+  while (set.size() <= npos) set.insert(dist(mt));
 
+  std::vector<size_t> indices(n);  // generate distinct indices with supply > 0
+  std::iota(indices.begin(), indices.end(), 0);
+  std::shuffle(indices.begin(), indices.end(), mt);
+
+  std::fill(out_it, out_end, Value{});
   Value sum = 0, sub = 0;
   auto it = set.begin();
-  for (; out_it != out_end; ++out_it) {
+  for (std::size_t i = 0; i < npos; ++i) {
     ++it;
     assert(it != set.end());
-    *out_it = *it - sub;
-    sum += *out_it;
+    std::size_t ind = indices[i];
+    out_it[ind] = *it - sub;
+    sum += out_it[ind];
     sub = *it;
-    assert(*out_it >= 0);
+    assert(out_it[ind] >= 0);
   }
   assert(sum == totalSupply);
 }
@@ -105,19 +113,20 @@ void fillSupply(Value totalSupply, It out_it, It out_end) {
  * @param ny Number of demand nodes
  * @param supply Supply vector that gets resized and filled
  */
-void setupSupply(const int nx, const int ny, std::vector<Value>& supply) {
+void setupSupply(const int nx, const int ny, std::vector<Value>& supply,
+                 const double density) {
   const int n = nx + ny;
   assert(nx >= 0 && ny >= 0 && n >= 0);
   supply.resize(n);
   Value totalSupply = upscaledTotalSupply(nx, ny);
-  fillSupply(totalSupply, supply.begin(), supply.begin() + nx);
-  fillSupply(totalSupply, supply.begin() + nx, supply.end());
+  fillSupply(totalSupply, supply.begin(), supply.begin() + nx, density);
+  fillSupply(totalSupply, supply.begin() + nx, supply.end(), density);
   for (auto it = supply.begin() + nx; it != supply.end(); ++it) *it *= -1;
 }
 
-ValueVector getRandomSupply(const int nx, const int ny) {
+ValueVector getRandomSupply(const int nx, const int ny, const double density) {
   ValueVector supply;
-  setupSupply(nx, ny, supply);
+  setupSupply(nx, ny, supply, density);
   return supply;
 }
 

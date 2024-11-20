@@ -22,6 +22,10 @@
 #define ULMON_CONST_IT 5
 #endif
 
+#ifndef ULMON_CONST_DENSITY
+#define ULMON_CONST_DENSITY .5
+#endif
+
 using namespace lemon;
 using namespace lemon::test;
 
@@ -41,7 +45,7 @@ void testSubsolve(const Int2Array dims) {
     std::flush(std::cout);
 
     // Marginals
-    ValueVector supply = getRandomSupply(n, n);
+    ValueVector supply = getRandomSupply(n, n, ULMON_CONST_DENSITY);
 
     // Reference
     Graph refG(dims, dims, supply, true);
@@ -88,7 +92,7 @@ void testRun(const Int2Array dims) {
 
     // Marginals
     ValueVector supply;
-    setupSupply(n, n, supply);
+    setupSupply(n, n, supply, ULMON_CONST_DENSITY);
 
     // Reference
     Graph refG(dims, dims, supply, true);

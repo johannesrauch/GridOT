@@ -2,6 +2,10 @@
 #include <ulmon/test/instance.h>
 #include <ulmon/ulm_grid_graph.h>
 
+#ifndef ULMON_CONST_DENSITY
+#define ULMON_CONST_DENSITY .5
+#endif
+
 using namespace lemon;
 using namespace lemon::test;
 
@@ -19,7 +23,7 @@ void testCtor1() {
   int ny = muYdim[0] * muYdim[1];
 
   // Marginals
-  ValueVector supply = test::getRandomSupply(nx, ny);
+  ValueVector supply = test::getRandomSupply(nx, ny, ULMON_CONST_DENSITY);
   Graph graph(muXdim, muYdim, supply, true);
 
   // Test costs
@@ -45,7 +49,7 @@ void testCtor2() {
   int ny = muYdim[0] * muYdim[1];
 
   // Marginals
-  ValueVector supply = test::getRandomSupply(nx, ny);
+  ValueVector supply = test::getRandomSupply(nx, ny, ULMON_CONST_DENSITY);
   PosVector yMin = {{0, 0}, {0, 0}, {0, 0}, {0, 1}};
   PosVector yMax = {{2, 2}, {1, 1}, {1, 1}, {2, 2}};
   Graph graph(muXdim, muYdim, supply, yMin, yMax);
@@ -75,7 +79,7 @@ void testCtor3AddArcs() {
   int ny = muYdim[0] * muYdim[1];
 
   // Marginals
-  ValueVector supply = test::getRandomSupply(nx, ny);
+  ValueVector supply = test::getRandomSupply(nx, ny, ULMON_CONST_DENSITY);
   Graph graph(muXdim, muYdim, supply, true);
   Graph coarse(graph, 2);
 
@@ -117,7 +121,7 @@ void testCtor3Supply() {
   int ny = muYdim[0] * muYdim[1];
 
   // Marginals
-  ValueVector supply = test::getRandomSupply(nx, ny);
+  ValueVector supply = test::getRandomSupply(nx, ny, ULMON_CONST_DENSITY);
   Graph graph(muXdim, muYdim, supply, true);
   Graph coarse(graph, 2);
   coarse.addAllArcs();
@@ -146,7 +150,7 @@ void testRebuildShield1() {
   assert(nx == ny);  // For this test
 
   // Marginals
-  ValueVector supply = test::getRandomSupply(nx, ny);
+  ValueVector supply = test::getRandomSupply(nx, ny, ULMON_CONST_DENSITY);
   Graph graph(muXdim, muYdim, supply);
 
   assert(countArcs(graph) == 0);
@@ -189,7 +193,7 @@ void testRebuildShield2() {
   assert(nx == ny);  // For this test
 
   // Marginals
-  ValueVector supply = test::getRandomSupply(nx, ny);
+  ValueVector supply = test::getRandomSupply(nx, ny, ULMON_CONST_DENSITY);
   Graph graph(muXdim, muYdim, supply);
 
   // Support
@@ -223,7 +227,7 @@ void testRebuildShield3() {
   assert(nx == ny);  // For this test
 
   // Marginals
-  ValueVector supply = test::getRandomSupply(nx, ny);
+  ValueVector supply = test::getRandomSupply(nx, ny, ULMON_CONST_DENSITY);
   Graph graph(muXdim, muYdim, supply);
 
   // Support
