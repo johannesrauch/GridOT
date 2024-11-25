@@ -790,7 +790,7 @@ class UlmNetworkSimplex {
 #endif
       prepareRebuild();
       const_cast<GR &>(_graph).rebuildShield(  //
-          _support, _support_arcs);
+          _support, _support_flow, _support_arcs);
       rebuildInternals();
       assert(c == totalCost());
 
