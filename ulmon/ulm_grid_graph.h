@@ -367,6 +367,10 @@ class UlmGridGraph : public SmartBpDigraph {
     _y_min.resize(_red_num, IntDimArray{});
     _y_max.clear();
     _y_max.resize(_red_num, _y_dim);
+    // empty supply -> empty shield
+    for (int x = 0; x < _red_num; ++x) {
+      if (_supply[x] == 0) _y_max[x].fill(0);
+    }
   }
 
   void updateShield(const SupportVector& support) {
