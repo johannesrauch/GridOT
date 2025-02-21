@@ -41,3 +41,12 @@ local
 *.exe
 *.out
 *.app
+
+# LaTeX
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.vtc
+
