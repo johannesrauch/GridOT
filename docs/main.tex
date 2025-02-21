@@ -1,0 +1,166 @@
+\documentclass[a4paper,UKenglish,cleveref, autoref, thm-restate]{lipics-v2021}
+\usepackage[shortend, vlined]{algorithm2e}
+%This is a template for producing LIPIcs articles. 
+%See lipics-v2021-authors-guidelines.pdf for further information.
+%for A4 paper format use option "a4paper", for US-letter use option "letterpaper"
+%for british hyphenation rules use option "UKenglish", for american hyphenation rules use option "USenglish"
+%for section-numbered lemmas etc., use "numberwithinsect"
+%for enabling cleveref support, use "cleveref"
+%for enabling autoref support, use "autoref"
+%for anonymousing the authors (e.g. for double-blind review), add "anonymous"
+%for enabling thm-restate support, use "thm-restate"
+%for enabling a two-column layout for the author/affilation part (only applicable for > 6 authors), use "authorcolumns"
+%for producing a PDF according the PDF/A standard, add "pdfa"
+
+%\pdfoutput=1 %uncomment to ensure pdflatex processing (mandatatory e.g. to submit to arXiv)
+\hideLIPIcs  %uncomment to remove references to LIPIcs series (logo, DOI, ...), e.g. when preparing a pre-final version to be uploaded to arXiv or another public repository
+
+%\graphicspath{{./graphics/}}%helpful if your graphic files are in another directory
+
+\bibliographystyle{plain}% the mandatory bibstyle
+
+\title{GridOT -- a discrete optimal transport solver on grids}
+
+%\titlerunning{Dummy short title} %TODO optional, please use if title is longer than one line
+
+\author{Johannes Rauch}
+{Ulm University, Institute of Optimization and Operations Research, Germany}
+{johannes.rauch@uni-ulm.de}
+{https://orcid.org/0000-0002-6925-8830}
+{}%TODO mandatory, please use full name; only 1 author per \author macro; first two parameters are mandatory, other parameters can be empty. Please provide at least the name of the affiliation and the country. The full address is optional. Use additional curly braces to indicate the correct name splitting when the last name consists of multiple name parts.
+\author{Leo Zanotti}{Ulm University, Institute of Optimization and Operations Research, Germany}{leo.zanotti@uni-ulm.de}{}{}
+
+\authorrunning{J. Rauch, L. Zanotti} %TODO mandatory. First: Use abbreviated first/middle names. Second (only in severe cases): Use first author plus 'et al.'
+
+\Copyright{Johannes Rauch, Leo Zanotti} %TODO mandatory, please use full first names. LIPIcs license is "CC-BY";  http://creativecommons.org/licenses/by/3.0/
+
+\ccsdesc[]{Mathematics of computing~Mathematical software~Solvers}
+%TODO mandatory: Please choose ACM 2012 classifications from https://dl.acm.org/ccs/ccs_flat.cfm 
+
+\keywords{Discrete optimal transport}%TODO mandatory; please add comma-separated list of keywords
+
+%\category{} %optional, e.g. invited paper
+
+%\relatedversion{} %optional, e.g. full version hosted on arXiv, HAL, or other respository/website
+%\relatedversiondetails[linktext={opt. text shown instead of the URL}, cite=DBLP:books/mk/GrayR93]{Classification (e.g. Full Version, Extended Version, Previous Version}{URL to related version} %linktext and cite are optional
+
+\supplement{
+\href{https://github.com/johannesrauch/GridOT/}{\texttt{https://github.com/johannesrauch/GridOT/}}
+}%optional, e.g. related research data, source code, ... hosted on a repository like zenodo, figshare, GitHub, ...
+%\supplementdetails[linktext={opt. text shown instead of the URL}, cite=DBLP:books/mk/GrayR93, subcategory={Description, Subcategory}, swhid={Software Heritage Identifier}]{General Classification (e.g. Software, Dataset, Model, ...)}{URL to related version} %linktext, cite, and subcategory are optional
+
+%\funding{(Optional) general funding statement \dots}%optional, to capture a funding statement, which applies to all authors. Please enter author specific funding statements as fifth argument of the \author macro.
+
+\acknowledgements{We thank Henning Bruhn-Fujimoto for the introduction to the problem and helpful discussions.}%optional
+
+\nolinenumbers %uncomment to disable line numbering
+
+
+
+%Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\EventEditors{}
+%\EventNoEds{}
+%\EventLongTitle{}
+%\EventShortTitle{}
+%\EventAcronym{}
+%\EventYear{}
+%\EventDate{}
+%\EventLocation{}
+%\EventLogo{}
+%\SeriesVolume{$\times$}
+%\ArticleNo{$\times$}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{tikz}
+\tikzset{
+	dot/.style = {circle, fill, minimum size=#1,
+		inner sep=0pt, outer sep=0pt},
+	dot/.default = 5pt
+}
+
+\usepackage{lmodern}
+
+\newcommand{\OSCM}{\textsc{One-Sided Crossing Minimization}}
+\DeclareMathOperator{\supp}{supp}
+\DeclareMathOperator{\OPT}{OPT}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\textcolor{red}{\bf TODO: Abstract; Leo's ORCID; Check if references are actually OT on grids}
+\end{abstract}
+
+\section{Introduction}\label{sec:intro}
+Informally, in the \emph{optimal transport} problem we are given two probability distributions and a cost function, and we seek a minimum cost transport function that transforms one probability function into the other.
+In \emph{discrete} optimal transport, the given probability distributions are discrete.
+Discrete optimal transport \emph{on grids} means that the underlying cost function has geometric properties; it is for example a metric.
+Discrete optimal transport on grids is an important special case of the general optimal transport problem, because it has numerous applications in image processing and computer vision.
+For instance, Werman et al.~\cite{werman1985distance} use a discrete optimal transport problem to define a distance metric for multidimensional histograms.
+Building on this, Peleg et al.~\cite{peleg1989unified} present a unified treatment of spatial and gray-level resolution in image digitization.
+As image pixels are conventionally arranged in two-dimensional grids, their approaches rely on solving discrete optimal transport on 2-dimensional grids.
+% Perhaps mention Wasserstein 1-distance
+Thus, the need for a practically fast solver is evident.
+
+\subsection{Preliminaries}
+We introduce discrete optimal transport on grids formerly before proceeding.
+For a finite set $S$ let $\mathcal{P}(S)$ denote the set of probability measures over $S$ with the power set as the $\sigma$-algebra.
+Given two finite sets $X$ and $Y$ together with two probability measures $\mu \in \mathcal{P}(X)$ and $\nu \in \mathcal{P}(Y)$, the set of couplings between $\mu$ and $\nu$ is given by
+\[
+\Pi(\mu,\nu) = \{\pi \in \mathcal{P}(X \times Y): \pi(\{x\} \times Y) = \mu(x), \mu(X \times \{y\}) = \nu(y) \text{ for all $x \in X$, $y \in Y$}\}.
+\]
+%Let $\overline{\mathbb{R}} = \mathbb{R} \cup \{\infty\}$.
+For a cost function $c: X \times Y \rightarrow \mathbb{R} \cup \{\infty\}$ the discrete optimal transport problem is
+\begin{align}\tag{$P$}\label{ot:dense}
+\min_{\pi \in \Pi(\mu,\nu)} C(\pi), \quad\text{where}\quad C(\pi) = \sum_{(x,y) \in X \times Y} c(x,y)\pi(x,y).
+\end{align}
+We say that (\ref{ot:dense}) is on a grid if $X = [x_1] \times \dots \times [x_d]$ and $Y = [y_1] \times \dots \times [y_d]$ for some positive integers $d, x_1, \dots, x_d, y_1, \dots, y_d$ and $c$ denotes the squared Euclidean distance.
+The discrete optimal transport problem (\ref{ot:dense}) is ``dense'' in the sense that an algorithm solving (\ref{ot:dense}) has to consider couplings of all elements in $X \times Y$, of which there are quadratically many.
+If $N \subset X \times Y$, then the restriction
+\begin{align}\tag{$P'$}\label{ot:sparse}
+\min_{\pi \in \Pi(\mu,\nu), \supp \pi \subseteq N} C(\pi)
+\end{align}
+of (\ref{ot:dense}) is ``sparse'' in the sense that an algorithm solving (\ref{ot:sparse}) only has to consider couplings of all elements in $N$.
+We say that $N$ is the \emph{neighborhood} of (\ref{ot:sparse}).
+Of course, $\OPT(\text{\ref{ot:dense}}) \leq \OPT(\text{\ref{ot:sparse}})$ holds for any neighborhood $N \subseteq X \times Y$, and ideally one would want to have a ``small'' neighborhood $N$ such that $\OPT(\text{\ref{ot:dense}}) = \OPT(\text{\ref{ot:sparse}})$.
+
+\subsection{Related work}
+Schmitzer~\cite{schmitzer2016sparse} devised a sparse multi-scale algorithm for dense optimal transport, which works very well in practice~\cite{schrieber2017dotmark}.
+Ignoring the multi-scale scheme, we outline his algorithm in Algorithm~\ref{alg:schmitzer}.
+It repeatedly solves a restricted discrete optimal transport problem (\ref{ot:sparse}) in a neighborhood $N$ and updates $N$ to solve the discrete optimal transport problem (\ref{ot:dense}) at hand.
+For grids he shows how to construct the neighborhoods $N$ in a sparse manner explicitly.
+In particular, $\OPT(\text{\ref{ot:dense}}) = \OPT(\text{\ref{ot:sparse}})$ holds for the neighborhood $N$ after the termination of the algorithm.
+We refer to his article for more details~\cite{schmitzer2016sparse}.
+\begin{algorithm}[h]
+\DontPrintSemicolon
+\KwIn{An instance of discrete optimal transport (\ref{ot:dense}) and a neighborhood $N$.}
+\KwOut{An optimal coupling.}
+\Repeat{the cost of the coupling does not improve anymore}{
+	solve the restricted discrete optimal transport problem (\ref{ot:sparse}) in neighborhood $N$\;
+	update $N$\;
+}
+output the last coupling\;
+\caption{An outline of Schmitzer's algorithm for dense optimal transport~\cite{schmitzer2016sparse} without the multi-scale scheme.}\label{alg:schmitzer}
+\end{algorithm}
+
+Schmitzer solves the restricted discrete optimal transport problem (\ref{ot:sparse}) in Algorithm~\ref{alg:schmitzer} with the network simplex algorithm~\cite{ahuja1993networkflows}.
+He uses the CPLEX\footnote{\href{https://www.ibm.com/products/ilog-cplex-optimization-studio}{\tt https://www.ibm.com/products/ilog-cplex-optimization-studio}} and LEMON~\cite{dezso2010lemon} network simplex implementations for his numerical experiments.
+Since the problems (\ref{ot:sparse}) are very similar in every iteration of Algorithm~\ref{alg:schmitzer}, it is natural to preserve information in the network simplex algorithm and use warmstarts.
+While the CPLEX provides an interface to set a basis for a warmstart, LEMON does not.
+To make up for this, Schmitzer uses a trick that modifies the cost throughout the execution of Algorithm~\ref{alg:schmitzer} with the LEMON library.
+Remarkably, he finds that LEMON outperforms CPLEX~\cite{schmitzer2016sparse}.
+
+\subsection{Our contribution}
+We provide a new C++-implementation of Schmitzer's~\cite{schmitzer2016sparse} sparse multi-scale algorithm for dense optimal transport on grids and a network simplex implementation that is adapted from LEMON.
+Our program distinguishes itself from Schmitzer's in the following points.
+We adhere to LEMON's design choice and use compile-time polymorphisms (templates) instead of run-time polymorphisms for efficency.
+Moreover, we use many of the standard library utilities to avoid dynamically allocating memory and handling raw pointers manually to avoid memory leaks and ensure memory safety.
+This results in a 3--4 times faster run-time compared to Schmitzer's solver on the DOTmark benchmark~\cite{schrieber2017dotmark}.
+Our code is open source and publicly available on GitHub\footnote{\href{https://github.com/johannesrauch/GridOT/}{\texttt{https://github.com/johannesrauch/GridOT/}}}.
+
+\section{Results}
+
+
+\bibliography{references}
+\end{document}
