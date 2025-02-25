@@ -151,6 +151,7 @@ void testRebuildShield1() {
 
   // Marginals
   ValueVector supply = test::getRandomSupply(nx, ny, ULMON_CONST_DENSITY);
+  for (auto& s : supply) ++s;
   Graph graph(muXdim, muYdim, supply);
 
   assert(countArcs(graph) == 0);
@@ -194,6 +195,7 @@ void testRebuildShield2() {
 
   // Marginals
   ValueVector supply = test::getRandomSupply(nx, ny, ULMON_CONST_DENSITY);
+  for (auto& s : supply) ++s;
   Graph graph(muXdim, muYdim, supply);
 
   // Support
@@ -228,6 +230,7 @@ void testRebuildShield3() {
 
   // Marginals
   ValueVector supply = test::getRandomSupply(nx, ny, ULMON_CONST_DENSITY);
+  for (auto& s : supply) ++s;
   Graph graph(muXdim, muYdim, supply);
 
   // Support
