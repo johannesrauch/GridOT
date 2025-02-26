@@ -7,6 +7,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_COMPILER /usr/bin/g++)
 
+option(CMAKE_BUILD_TYPE "Build type" Release)
+
 #add_compile_options(-Wall -Werror)
 option(ULMON_PROFILE "Flag to turn profiling support on" OFF)
 if(ULMON_PROFILE)
