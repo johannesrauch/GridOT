@@ -2,7 +2,7 @@ import sys
 import re
 import math
 
-colors = {"GridOT": "red", "MultiScaleOT": "blue"}
+colors = {"GridOT": "blue", "MultiScaleOT": "red"}
 
 def write_boxplot(file, solver, dim, times):
     times.sort()
