@@ -1,0 +1,9 @@
+num dim cls tms sol
+1 128 WhiteNoise 1305.6 MultiScaleOT
+2 128 GRFrough 1199.5 MultiScaleOT
+3 128 GRFmoderate 1491.3 MultiScaleOT
+4 128 GRFsmooth 1496.9 MultiScaleOT
+5 128 LogGRF 891.7 MultiScaleOT
+6 128 LogitGRF 1952.3 MultiScaleOT
+7 128 CauchyDensity 1056.6 MultiScaleOT
+9 128 ClassicImages 1500.9 MultiScaleOT

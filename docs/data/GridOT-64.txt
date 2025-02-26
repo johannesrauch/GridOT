@@ -1,0 +1,11 @@
+num dim cls tms sol
+1 64 WhiteNoise 43.2 GridOT
+2 64 GRFrough 55.0 GridOT
+3 64 GRFmoderate 51.2 GridOT
+4 64 GRFsmooth 48.6 GridOT
+5 64 LogGRF 48.0 GridOT
+6 64 LogitGRF 51.6 GridOT
+7 64 CauchyDensity 43.6 GridOT
+8 64 Shapes 27.8 GridOT
+9 64 ClassicImages 50.3 GridOT
+10 64 MicroscopyImages 242.6 GridOT

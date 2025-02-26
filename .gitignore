@@ -4,7 +4,7 @@ benchmark/Pictures/
 benchmark/Results/
 
 # Article
-docs/data/*.txt
+#docs/data/*.txt
 
 # Build stuff
 build
