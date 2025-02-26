@@ -1,9 +1,12 @@
-# benchmark
+# Benchmark
 benchmark/Data/
 benchmark/Pictures/
 benchmark/Results/
 
-# build stuff
+# Article
+docs/data/*.txt
+
+# Build stuff
 build
 local
 
@@ -49,4 +52,4 @@ local
 *.log
 *.out
 *.vtc
-
+*.synctex.gz
