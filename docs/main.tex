@@ -1,5 +1,9 @@
+% !TeX spellcheck = <none>
 \documentclass[a4paper,UKenglish,cleveref, autoref, thm-restate]{lipics-v2021}
 \usepackage[shortend, vlined]{algorithm2e}
+\usepackage{pgfplots}
+\usepgfplotslibrary{statistics}
+\pgfplotsset{compat=1.18}
 %This is a template for producing LIPIcs articles. 
 %See lipics-v2021-authors-guidelines.pdf for further information.
 %for A4 paper format use option "a4paper", for US-letter use option "letterpaper"
@@ -115,9 +119,10 @@ For a cost function $c: X \times Y \rightarrow \mathbb{R} \cup \{\infty\}$ the d
 \begin{align}\tag{$P$}\label{ot:dense}
 \min_{\pi \in \Pi(\mu,\nu)} C(\pi), \quad\text{where}\quad C(\pi) = \sum_{(x,y) \in X \times Y} c(x,y)\pi(x,y).
 \end{align}
-We say that (\ref{ot:dense}) is on a grid if $X = [x_1] \times \dots \times [x_d]$ and $Y = [y_1] \times \dots \times [y_d]$ for some positive integers $d, x_1, \dots, x_d, y_1, \dots, y_d$ and $c$ denotes the squared Euclidean distance.
+Let $[i] = \{1, 2, \dots, i\}$ for an integer $i$.
+We say that (\ref{ot:dense}) is on a grid if $X = [x_1] \times \dots \times [x_d]$ and $Y = [y_1] \times \dots \times [y_d]$ for some positive integers $d$, $x_1, \dots, x_d$ and $y_1, \dots, y_d$, and $c$ denotes the squared Euclidean distance.
 The discrete optimal transport problem (\ref{ot:dense}) is ``dense'' in the sense that an algorithm solving (\ref{ot:dense}) has to consider couplings of all elements in $X \times Y$, of which there are quadratically many.
-If $N \subset X \times Y$, then the restriction
+If $N \subset X \times Y$ is a ``small'' subset, then the restriction
 \begin{align}\tag{$P'$}\label{ot:sparse}
 \min_{\pi \in \Pi(\mu,\nu), \supp \pi \subseteq N} C(\pi)
 \end{align}
@@ -129,10 +134,11 @@ Of course, $\OPT(\text{\ref{ot:dense}}) \leq \OPT(\text{\ref{ot:sparse}})$ holds
 Schmitzer~\cite{schmitzer2016sparse} devised a sparse multi-scale algorithm for dense optimal transport, which works very well in practice~\cite{schrieber2017dotmark}.
 Ignoring the multi-scale scheme, we outline his algorithm in Algorithm~\ref{alg:schmitzer}.
 It repeatedly solves a restricted discrete optimal transport problem (\ref{ot:sparse}) in a neighborhood $N$ and updates $N$ to solve the discrete optimal transport problem (\ref{ot:dense}) at hand.
-For grids he shows how to construct the neighborhoods $N$ in a sparse manner explicitly.
+For grids he shows how to construct and update the neighborhoods $N$ in a sparse manner explicitly.
 In particular, $\OPT(\text{\ref{ot:dense}}) = \OPT(\text{\ref{ot:sparse}})$ holds for the neighborhood $N$ after the termination of the algorithm.
 We refer to his article for more details~\cite{schmitzer2016sparse}.
 \begin{algorithm}[h]
+\caption{An outline of Schmitzer's algorithm for dense optimal transport~\cite{schmitzer2016sparse} without the multi-scale scheme.}\label{alg:schmitzer}
 \DontPrintSemicolon
 \KwIn{An instance of discrete optimal transport (\ref{ot:dense}) and a neighborhood $N$.}
 \KwOut{An optimal coupling.}
@@ -141,26 +147,366 @@ We refer to his article for more details~\cite{schmitzer2016sparse}.
 	update $N$\;
 }
 output the last coupling\;
-\caption{An outline of Schmitzer's algorithm for dense optimal transport~\cite{schmitzer2016sparse} without the multi-scale scheme.}\label{alg:schmitzer}
 \end{algorithm}
 
 Schmitzer solves the restricted discrete optimal transport problem (\ref{ot:sparse}) in Algorithm~\ref{alg:schmitzer} with the network simplex algorithm~\cite{ahuja1993networkflows}.
-He uses the CPLEX\footnote{\href{https://www.ibm.com/products/ilog-cplex-optimization-studio}{\tt https://www.ibm.com/products/ilog-cplex-optimization-studio}} and LEMON~\cite{dezso2010lemon} network simplex implementations for his numerical experiments.
+He uses the CPLEX\footnote{\href{https://www.ibm.com/products/ilog-cplex-optimization-studio}{\tt https://www.ibm.com/products/ilog-cplex-optimization-studio}} and LEMON~\cite{dezso2010lemon} network simplex implementations for his numerical experiments\footnote{He also uses the cost scaling implementation of LEMON~\cite{dezso2010lemon}, which is outperformed by the network simplex algorithms.}.
 Since the problems (\ref{ot:sparse}) are very similar in every iteration of Algorithm~\ref{alg:schmitzer}, it is natural to preserve information in the network simplex algorithm and use warmstarts.
 While the CPLEX provides an interface to set a basis for a warmstart, LEMON does not.
-To make up for this, Schmitzer uses a trick that modifies the cost throughout the execution of Algorithm~\ref{alg:schmitzer} with the LEMON library.
-Remarkably, he finds that LEMON outperforms CPLEX~\cite{schmitzer2016sparse}.
+To make up for this, Schmitzer uses a trick that modifies the cost function throughout the execution of Algorithm~\ref{alg:schmitzer} with the LEMON library.
+Remarkably, he finds that LEMON outperforms CPLEX with this trick~\cite{schmitzer2016sparse}.
 
 \subsection{Our contribution}
 We provide a new C++-implementation of Schmitzer's~\cite{schmitzer2016sparse} sparse multi-scale algorithm for dense optimal transport on grids and a network simplex implementation that is adapted from LEMON.
 Our program distinguishes itself from Schmitzer's in the following points.
 We adhere to LEMON's design choice and use compile-time polymorphisms (templates) instead of run-time polymorphisms for efficency.
 Moreover, we use many of the standard library utilities to avoid dynamically allocating memory and handling raw pointers manually to avoid memory leaks and ensure memory safety.
-This results in a 3--4 times faster run-time compared to Schmitzer's solver on the DOTmark benchmark~\cite{schrieber2017dotmark}.
+(Using Valgrind\footnote{\href{https://valgrind.org/}{\tt https://valgrind.org/}} we noticed memory leaks in Schmitzer's solver.)
+On the DOTmark benchmark~\cite{schrieber2017dotmark}, this results in roughly a 2--4 times faster run-time compared to Schmitzer's solver (see Section~\ref{sec:res}).
 Our code is open source and publicly available on GitHub\footnote{\href{https://github.com/johannesrauch/GridOT/}{\texttt{https://github.com/johannesrauch/GridOT/}}}.
 
-\section{Results}
+\begin{figure}[h]
+\caption{The average runtimes in each dataset category and dimension. The runtimes of our solver are blue while the runtimes of Schmitzer's solver are red.}\label{fig:overview}
+\begin{subfigure}{\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+xtick=data,
+xticklabels={White noise, Rough GRF, Moderate GRF, Smooth GRF, Logarithmic GRF, Logistic GRF, Cauchy density, Shapes, Classic images, Microscopy images},
+x tick label style={rotate=75},
+xlabel={Dataset category},
+axis y line*=left,
+ylabel={$t$ in ms},
+]
+\addplot+ [only marks] table [x=num, y=tms] {data/GridOT-32.txt};
+\addplot+ [only marks] table [x=num, y=tms] {data/MultiScaleOT-32.txt};
+\end{axis}
+\begin{axis}[
+hide x axis,
+axis y line*=right,
+ymin=1,
+ymax=4,
+ylabel={Speedup factor},
+]
+\addplot [darkgray, thick] table [x=num, y=speedup] {data/Speedup-32.txt};
+\end{axis}
+\end{tikzpicture}
+\caption{Grid dimension: $32 \times 32$.}
+\end{subfigure}
+\end{figure}
 
+\begin{figure}[h]
+\ContinuedFloat
+\begin{subfigure}{\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+xtick=data,
+xticklabels={White noise, Rough GRF, Moderate GRF, Smooth GRF, Logarithmic GRF, Logistic GRF, Cauchy density, Shapes, Classic images, Microscopy images},
+x tick label style={rotate=75},
+xlabel={Dataset category},
+axis y line*=left,
+ylabel={$t$ in ms},
+]
+\addplot+ [only marks] table [x=num, y=tms] {data/GridOT-64.txt};
+\addplot+ [only marks] table [x=num, y=tms] {data/MultiScaleOT-64.txt};
+\end{axis}
+\begin{axis}[
+hide x axis,
+axis y line*=right,
+ymin=1,
+ymax=4,
+ylabel={Speedup factor},
+]
+\addplot [darkgray, thick] table [x=num, y=speedup] {data/Speedup-64.txt};
+\end{axis}
+\end{tikzpicture}
+\caption{Grid dimension: $64 \times 64$.}
+\end{subfigure}
+\end{figure}
+
+\begin{figure}[h]
+\ContinuedFloat
+\begin{subfigure}{\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+xtick=data,
+xticklabels={White noise, Rough GRF, Moderate GRF, Smooth GRF, Logarithmic GRF, Logistic GRF, Cauchy density, Shapes, Classic images, Microscopy images},
+x tick label style={rotate=75},
+xlabel={Dataset category},
+axis y line*=left,
+ylabel={$t$ in ms},
+]
+\addplot+ [only marks] table [x=num, y=tms] {data/GridOT-128.txt};
+\addplot+ [only marks] table [x=num, y=tms] {data/MultiScaleOT-128.txt};
+\end{axis}
+\begin{axis}[
+hide x axis,
+axis y line*=right,
+ymin=1,
+ymax=4,
+ylabel={Speedup factor},
+]
+\addplot [darkgray, thick] table [x=num, y=speedup] {data/Speedup-128.txt};
+\end{axis}
+\end{tikzpicture}
+\caption{Grid dimension: $128 \times 128$.}
+\end{subfigure}
+\end{figure}
+
+\section{Results}\label{sec:res}
+We run the benchmark on a computer with a Intel(R) Core(TM) i7-8700K CPU @ 3.70GHz and $2 \times 8$ GiB DDR4 DIMM @ 2133 MHz in dual channel mode.
+We use the DOTmark~\cite{schrieber2017dotmark} dataset as a benchmark.
+DOTmark consists of several dataset categories: White noise, rough, moderate and smooth Gaussian random field (GRF), logarithmic and logistic GRF, Cauchy density, shapes, classic images, and microscopy images.
+These categories can be divided into two parts: One part is randomly generated and the other part is taken from practical applications.
+We refer the reader to the article of Schrieber et al.~\cite{schrieber2017dotmark} for more details.
+
+One dataset of DOTmark corresponds to a measure $\mu$ or $\nu$, respectively, in a discrete optimal transport problem~(\ref{ot:dense}) on grids.
+In each dataset category of DOTmark, we pair every two datasets and solve the corresponding discrete optimal transport on grids instance ten times.
+The averages of these ten runs constitute the runtimes we consider in the subfigures of Figure~\ref{fig:boxplots}.
+The average runtime in each dataset category and dimension is shown as an overview in Figure~\ref{fig:overview}.
+
+Unfortunately, Schmitzer's solver~\cite{schmitzer2016sparse} can only handle strictly positive measures $\mu$ and $\nu$, although measures with $\mu(x)=0$ or $\nu(y)=0$ for some $x \in X$ or $y \in Y$, respectively, are common in practical applications as DOTmark shows.
+Therefore, some of the datapoints in Figure~\ref{fig:overview} and Figure~\ref{fig:boxplots} are missing, and we are unable to compare our solver to Schmitzer's solver in every dataset categorie without modifying the DOTmark benchmark dataset.
+
+\section{Conclusion}
+We showed that there is room for improvement in discrete optimal transport solvers, which are still competitive when compared to continuous, numeric solvers~\cite{schrieber2017dotmark}.
+We focused on the case where the domains $X$ and $Y$ of (\ref{ot:dense}) are grids and the cost function $c$ is the squared Euclidean distance and achieved roughly a 2--4 times faster runtime compared to Schmitzer's work.
+It would be nice to have improved solvers for other geometric constellations of $X$ and $Y$ and other cost functions $c$.
+For this, we think that the work of Schmitzer~\cite{schmitzer2016sparse} is again a good starting point, since he not only considers grids and squared Euclidean distance, but also $X,Y \subseteq \mathbb{R}^d$ with squared Euclidean distance or strictly convex cost functions, and $X,Y \subseteq S_d = \{x \in \mathbb{R}^d: \Vert x \Vert = 1\}$ with squared geodesic distance.
+Another direction for future work is to implement a general interface to support warmstarts in LEMON's network simplex algorithm.
+As evident in Schmitzer's article~\cite{schmitzer2016sparse}, LEMON is a powerful, open source library and the network simplex algorithm is an important tool in other algorithms.
+Therefore, it would be a good idea to further develop LEMON and unfurl its full potential.
 
 \bibliography{references}
+
+\newpage
+\appendix
+\section{Boxplots}
+\begin{figure}[h]
+\caption{Boxplots of the averaged runtimes for each pair in each dataset category of DOTmark. The runtimes of our solver are blue while the runtimes of Schmitzer's solver are red.}\label{fig:boxplots}
+\begin{subfigure}{0.4\textwidth}
+\begin{tikzpicture}[scale=0.8]
+\begin{axis}[
+boxplot/draw direction=y, 
+boxplot/box extend=0.25,
+xtick={5,6,7}, 
+ymode=log,
+xlabel={$\log_2(\dim)$},
+ylabel={$t$ in ms},
+]
+\input{data/GridOT-WhiteNoise-32.txt}
+\input{data/GridOT-WhiteNoise-64.txt}
+%\input{data/GridOT-WhiteNoise-128.txt}
+\input{data/MultiScaleOT-WhiteNoise-32.txt}
+\input{data/MultiScaleOT-WhiteNoise-64.txt}
+%\input{data/MultiScaleOT-WhiteNoise-128.txt}
+\end{axis}
+\end{tikzpicture}
+\caption{White noise.}
+\end{subfigure}
+\hspace{12mm}
+\begin{subfigure}{0.4\textwidth}
+\begin{tikzpicture}[scale=0.8]
+\begin{axis}[
+boxplot/draw direction=y, 
+boxplot/box extend=0.25,
+xtick={5,6,7}, 
+ymode=log,
+xlabel={$\log_2(\dim)$},
+ylabel={$t$ in ms},
+]
+\input{data/GridOT-GRFrough-32.txt}
+\input{data/GridOT-GRFrough-64.txt}
+\input{data/GridOT-GRFrough-128.txt}
+\input{data/MultiScaleOT-GRFrough-32.txt}
+\input{data/MultiScaleOT-GRFrough-64.txt}
+\input{data/MultiScaleOT-GRFrough-128.txt}
+\end{axis}
+\end{tikzpicture}
+\caption{Rough GRF.}
+\end{subfigure}
+\end{figure}
+
+\begin{figure}[h]
+\ContinuedFloat
+\begin{subfigure}{0.4\textwidth}
+\begin{tikzpicture}[scale=0.8]
+\begin{axis}[
+boxplot/draw direction=y, 
+boxplot/box extend=0.25,
+xtick={5,6,7}, 
+ymode=log,
+xlabel={$\log_2(\dim)$},
+ylabel={$t$ in ms},
+]
+\input{data/GridOT-GRFmoderate-32.txt}
+\input{data/GridOT-GRFmoderate-64.txt}
+\input{data/GridOT-GRFmoderate-128.txt}
+\input{data/MultiScaleOT-GRFmoderate-32.txt}
+\input{data/MultiScaleOT-GRFmoderate-64.txt}
+\input{data/MultiScaleOT-GRFmoderate-128.txt}
+\end{axis}
+\end{tikzpicture}
+\caption{Moderate GRF.}
+\end{subfigure}
+\hspace{12mm}
+\begin{subfigure}{0.4\textwidth}
+\begin{tikzpicture}[scale=0.8]
+\begin{axis}[
+boxplot/draw direction=y, 
+boxplot/box extend=0.25,
+xtick={5,6,7}, 
+ymode=log,
+xlabel={$\log_2(\dim)$},
+ylabel={$t$ in ms},
+]
+\input{data/GridOT-GRFsmooth-32.txt}
+\input{data/GridOT-GRFsmooth-64.txt}
+\input{data/GridOT-GRFsmooth-128.txt}
+\input{data/MultiScaleOT-GRFsmooth-32.txt}
+\input{data/MultiScaleOT-GRFsmooth-64.txt}
+\input{data/MultiScaleOT-GRFsmooth-128.txt}
+\end{axis}
+\end{tikzpicture}
+\caption{Smooth GRF.}
+\end{subfigure}
+\end{figure}
+
+\begin{figure}[h]
+\ContinuedFloat
+\begin{subfigure}{0.4\textwidth}
+\begin{tikzpicture}[scale=0.8]
+\begin{axis}[
+boxplot/draw direction=y, 
+boxplot/box extend=0.25,
+xtick={5,6,7}, 
+ymode=log,
+xlabel={$\log_2(\dim)$},
+ylabel={$t$ in ms},
+]
+\input{data/GridOT-LogGRF-32.txt}
+\input{data/GridOT-LogGRF-64.txt}
+\input{data/GridOT-LogGRF-128.txt}
+\input{data/MultiScaleOT-LogGRF-32.txt}
+\input{data/MultiScaleOT-LogGRF-64.txt}
+\input{data/MultiScaleOT-LogGRF-128.txt}
+\end{axis}
+\end{tikzpicture}
+\caption{Logarithmic GRF.}
+\end{subfigure}
+\hspace{12mm}
+\begin{subfigure}{0.4\textwidth}
+\begin{tikzpicture}[scale=0.8]
+\begin{axis}[
+boxplot/draw direction=y, 
+boxplot/box extend=0.25,
+xtick={5,6,7}, 
+ymode=log,
+xlabel={$\log_2(\dim)$},
+ylabel={$t$ in ms},
+]
+\input{data/GridOT-LogitGRF-32.txt}
+\input{data/GridOT-LogitGRF-64.txt}
+\input{data/GridOT-LogitGRF-128.txt}
+\input{data/MultiScaleOT-LogitGRF-32.txt}
+\input{data/MultiScaleOT-LogitGRF-64.txt}
+\input{data/MultiScaleOT-LogitGRF-128.txt}
+\end{axis}
+\end{tikzpicture}
+\caption{Logistic GRF.}
+\end{subfigure}
+\end{figure}
+
+\begin{figure}[h]
+\ContinuedFloat
+\begin{subfigure}{0.4\textwidth}
+\begin{tikzpicture}[scale=0.8]
+\begin{axis}[
+boxplot/draw direction=y, 
+boxplot/box extend=0.25,
+xtick={5,6,7}, 
+ymode=log,
+xlabel={$\log_2(\dim)$},
+ylabel={$t$ in ms},
+]
+\input{data/GridOT-CauchyDensity-32.txt}
+\input{data/GridOT-CauchyDensity-64.txt}
+\input{data/GridOT-CauchyDensity-128.txt}
+\input{data/MultiScaleOT-CauchyDensity-32.txt}
+\input{data/MultiScaleOT-CauchyDensity-64.txt}
+\input{data/MultiScaleOT-CauchyDensity-128.txt}
+\end{axis}
+\end{tikzpicture}
+\caption{Cauchy density.}
+\end{subfigure}
+\hspace{12mm}
+\begin{subfigure}{0.4\textwidth}
+\begin{tikzpicture}[scale=0.8]
+\begin{axis}[
+boxplot/draw direction=y, 
+boxplot/box extend=0.25,
+xtick={5,6,7}, 
+ymode=log,
+xlabel={$\log_2(\dim)$},
+ylabel={$t$ in ms},
+]
+\input{data/GridOT-Shapes-32.txt}
+\input{data/GridOT-Shapes-64.txt}
+%\input{data/GridOT-Shapes-128.txt}
+%\input{data/MultiScaleOT-Shapes-32.txt}
+%\input{data/MultiScaleOT-Shapes-64.txt}
+%\input{data/MultiScaleOT-Shapes-128.txt}
+\end{axis}
+\end{tikzpicture}
+\caption{Shapes.}
+\end{subfigure}
+\end{figure}
+
+\begin{figure}[h]
+\ContinuedFloat
+\begin{subfigure}{0.4\textwidth}
+\begin{tikzpicture}[scale=0.8]
+\begin{axis}[
+boxplot/draw direction=y, 
+boxplot/box extend=0.25,
+xtick={5,6,7}, 
+ymode=log,
+xlabel={$\log_2(\dim)$},
+ylabel={$t$ in ms},
+]
+\input{data/GridOT-ClassicImages-32.txt}
+\input{data/GridOT-ClassicImages-64.txt}
+\input{data/GridOT-ClassicImages-128.txt}
+\input{data/MultiScaleOT-ClassicImages-32.txt}
+\input{data/MultiScaleOT-ClassicImages-64.txt}
+\input{data/MultiScaleOT-ClassicImages-128.txt}
+\end{axis}
+\end{tikzpicture}
+\caption{Classic images.}
+\end{subfigure}
+\hspace{12mm}
+\begin{subfigure}{0.4\textwidth}
+\begin{tikzpicture}[scale=0.8]
+\begin{axis}[
+boxplot/draw direction=y, 
+boxplot/box extend=0.25,
+xtick={5,6,7}, 
+ymode=log,
+xlabel={$\log_2(\dim)$},
+ylabel={$t$ in ms},
+]
+\input{data/GridOT-MicroscopyImages-32.txt}
+\input{data/GridOT-MicroscopyImages-64.txt}
+\input{data/GridOT-MicroscopyImages-128.txt}
+% Error in Schmitzer's solver
+%\input{data/MultiScaleOT-MicroscopyImages-32.txt}
+%\input{data/MultiScaleOT-MicroscopyImages-64.txt}
+%\input{data/MultiScaleOT-MicroscopyImages-128.txt}
+\end{axis}
+\end{tikzpicture}
+\caption{Microscopy images.}
+\end{subfigure}
+\end{figure}
 \end{document}
