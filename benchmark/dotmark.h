@@ -102,6 +102,8 @@ class DOTmark {
           int n = 0;
           for (size_t i = 0; i < images.size(); ++i) {
             for (size_t j = 0; j < images.size(); ++j) {
+              if (i == j) continue;
+
               auto [opt, t_ij, opt_ref, t_ref_ij] =
                   benchmarkPair(class_name, res, images[i], images[j]);
               t += t_ij;
@@ -165,6 +167,11 @@ class DOTmark {
   ValueVector loadSupply(const std::string& source, const std::string& target) {
     ValueVector supply = loadCSV(source);
     ValueVector demand = loadCSV(target);
+
+    // Increment supply and demand by one to avoid zero entries 
+    // which Schmitzer cannot handle
+    for (auto& v : supply) ++v;
+    for (auto& v : demand) ++v;
 
     ValueVector signed_supply = supply;
     for (Value v : demand) signed_supply.push_back(-v);
