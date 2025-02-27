@@ -44,6 +44,12 @@ if __name__ == "__main__":
 
             if len(col) != 8:
                 continue
+            if col[2] == col[3]: # i == j
+                continue
+            #if col[4] == "0": # Not optimal
+                #continue
+            if int(col[0]) > 128:
+                continue
             
             ot = gridot if col[-1] == "GridOT" else multiscaleot
             if not col[1] in ot:
@@ -55,4 +61,7 @@ if __name__ == "__main__":
     for kind in gridot:
         for dim in gridot[kind]:
             write_data(gridot[kind][dim])
+    
+    for kind in multiscaleot:
+        for dim in multiscaleot[kind]:
             write_data(multiscaleot[kind][dim])
