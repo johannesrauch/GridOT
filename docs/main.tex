@@ -1,4 +1,4 @@
-% !TeX spellcheck = <none>
+% !TeX spellcheck = en_US
 \documentclass[a4paper,UKenglish,cleveref, autoref, thm-restate]{lipics-v2021}
 \usepackage[shortend, vlined]{algorithm2e}
 \usepackage{pgfplots}
@@ -115,7 +115,7 @@ As image pixels are conventionally arranged in two-dimensional grids, their appr
 Thus, the need for a practically fast solver is evident.
 
 \subsection{Preliminaries}
-Before proceeding, we introduce discrete optimal transport on grids formerly.
+Before proceeding, we introduce discrete optimal transport on grids formally.
 For a finite set $S$ let $\mathcal{P}(S)$ denote the set of probability measures over $S$ with the power set as the $\sigma$-algebra.
 Given two finite sets $X$ and $Y$ together with two probability measures $\mu \in \mathcal{P}(X)$ and $\nu \in \mathcal{P}(Y)$, the set of \emph{couplings} or \emph{transport functions} between $\mu$ and $\nu$ is given by
 \[
@@ -141,8 +141,9 @@ Of course, $\OPT(\text{\ref{ot:dense}}) \leq \OPT(\text{\ref{ot:sparse}})$ holds
 \subsection{Related work}
 Schmitzer devised a sparse multi-scale algorithm for dense optimal transport, which works very well in practice~\cite{schmitzer2016sparse,schrieber2017dotmark}.
 Ignoring the multi-scale scheme, we outline his algorithm in Algorithm~\ref{alg:schmitzer}.
-It repeatedly solves a restricted discrete optimal transport problem (\ref{ot:sparse}) in a neighborhood $N$ and consecutively updates $N$ to solve the discrete optimal transport problem (\ref{ot:dense}) at hand.
-For grids he shows how to construct and update the neighborhoods $N$ in a sparse manner explicitly.
+The input neighborhood $N$ of Algorithm~\ref{alg:schmitzer} is an ``educated guess'' for a neighborhood $N$ fulfilling $\OPT(\text{\ref{ot:dense}}) = \OPT(\text{\ref{ot:sparse}})$ and usually obtained from the multi-scale scheme.
+Algorithm~\ref{alg:schmitzer} repeatedly solves a restricted discrete optimal transport problem (\ref{ot:sparse}) in a neighborhood $N$ and consecutively updates $N$ to solve the discrete optimal transport problem (\ref{ot:dense}) at hand.
+For grids, he shows how to construct and update the neighborhoods $N$ in a sparse manner explicitly.
 In particular, $\OPT(\text{\ref{ot:dense}}) = \OPT(\text{\ref{ot:sparse}})$ holds for the neighborhood $N$ after the termination of the algorithm.
 We refer to his article for a proof of this and more details~\cite{schmitzer2016sparse}.
 \begin{algorithm}[h]
@@ -160,8 +161,8 @@ output the last coupling\;
 To solve the restricted discrete optimal transport problem (\ref{ot:sparse}) in Algorithm~\ref{alg:schmitzer}, Schmitzer uses the network simplex algorithm.
 An introduction to this algorithm can be found in a book of Ahuja et al.~\cite{ahuja1993networkflows}.
 Specifically, he uses the CPLEX\footnote{\href{https://www.ibm.com/products/ilog-cplex-optimization-studio}{\tt https://www.ibm.com/products/ilog-cplex-optimization-studio}} and LEMON~\cite{dezso2010lemon} network simplex implementations for his numerical experiments\footnote{He also uses the cost scaling implementation of LEMON~\cite{dezso2010lemon}, which is outperformed by the network simplex algorithms.}.
-Since the problems (\ref{ot:sparse}) are very similar in every iteration of Algorithm~\ref{alg:schmitzer}, it is natural to preserve information in the network simplex algorithm and use warmstarts.
-While CPLEX provides an interface to set a basis for a warmstart, LEMON does not.
+Since the problems (\ref{ot:sparse}) are very similar in every iteration of Algorithm~\ref{alg:schmitzer}, it is natural to preserve information in the network simplex algorithm and use warm starts.
+While CPLEX provides an interface to set a basis for a warm start, LEMON does not.
 To make up for this, Schmitzer uses a trick that modifies the cost function throughout the execution of Algorithm~\ref{alg:schmitzer} with the LEMON network simplex.
 Remarkably, he finds that LEMON outperforms CPLEX with this trick~\cite{schmitzer2016sparse}.
 
@@ -169,8 +170,8 @@ Remarkably, he finds that LEMON outperforms CPLEX with this trick~\cite{schmitze
 We provide a new C++-implementation of Schmitzer's~\cite{schmitzer2016sparse} sparse multi-scale algorithm for dense optimal transport on grids.
 Our solver uses a modified network simplex implementation that is adapted from LEMON.
 It updates the neighborhood $N$ internally while solving the restricted problem (\ref{ot:sparse}), which preserves information in the network simplex algorithm and eliminates the need for restarts.
-Beside that, our program distinguishes itself from Schmitzer's in the following points:
-We adhere to LEMON's design choice and use compile-time polymorphisms (templates) instead of run-time polymorphisms for efficency.
+Besides, our program distinguishes itself from Schmitzer's in the following points:
+We adhere to LEMON's design choice and use compile-time polymorphisms (templates) instead of run-time polymorphisms for efficiency.
 Furthermore, we use many of the standard library utilities to avoid dynamically allocating memory and handling raw pointers manually.
 This avoids memory leaks and ensures memory safety.
 (Using Valgrind\footnote{\href{https://valgrind.org/}{\tt https://valgrind.org/},} we noticed memory leaks in Schmitzer's solver.)
@@ -178,7 +179,7 @@ On the DOTmark benchmark~\cite{schrieber2017dotmark}, this results in roughly a 
 Our code is open source and publicly available on GitHub\footnote{\href{https://github.com/johannesrauch/GridOT/}{\texttt{https://github.com/johannesrauch/GridOT/}}}.
 
 \begin{figure}[h]
-\caption{The average runtimes in each dataset category and dimension from $32 \times 32$ to $128 \times 128$ together with the speedup factor. The red marks indicate the average runtimes of Schmitzer's solver while the blue marks correspond to the runtimes of our solver. The thick line illustrates the speedup factor.}\label{fig:overview}
+\caption{The average runtimes in each dataset category and dimension from $32 \times 32$ to $128 \times 128$ together with the speedup factor. The red squares indicate the average runtimes of Schmitzer's solver while the blue dots correspond to the runtimes of our solver. The thick line illustrates the speedup factor.}\label{fig:overview}
 \begin{subfigure}{\textwidth}
 \centering
 \begin{tikzpicture}
@@ -268,16 +269,16 @@ ylabel={Speedup factor},
 \end{figure}
 
 \section{Results}\label{sec:res}
-We tested our program on a computer with a Intel(R) Core(TM) i7-8700K CPU @ 3.70GHz and $2 \times 8$ GiB DDR4 DIMM @ 2133 MHz in dual channel mode.
+We tested our program on a computer with an Intel(R) Core(TM) i7-8700K CPU @ 3.70GHz and $2 \times 8$ GiB DDR4 DIMM @ 2133 MHz in dual channel mode.
 For the test, we use the DOTmark~\cite{schrieber2017dotmark} dataset as a benchmark.
 DOTmark consists of several dataset categories: White noise, rough, moderate and smooth Gaussian random field (GRF), logarithmic and logistic GRF, Cauchy density, shapes, classic images, and microscopy images.
 Note that these categories can be divided into two parts: One part is randomly generated and the other part is taken from practical applications.
-Each category comes in the grid dimensions ranging from $32 \times 32$ to $512 \times 512$ in factor two steps.
+Each category comes in grid dimensions ranging from $32 \times 32$ to $512 \times 512$, increasing by factors of two.
 We only go up to dimension $128 \times 128$ in our tests.
 We refer the reader to the article of Schrieber et al.~\cite{schrieber2017dotmark} for more details on DOTmark.
 
 We can think of one dataset as one probability measure $\mu$ or $\nu$, respectively, in a discrete optimal transport problem~(\ref{ot:dense}) on grids.
-In each dataset category of DOTmark and each grid dimension from $32 \times 32$ to $128 \times 128$, we pair every two datasets and solve the correspondin discrete optimal transport on grids instance ten times.
+In each dataset category of DOTmark and each grid dimension from $32 \times 32$ to $128 \times 128$, we pair every two datasets and solve the corresponding discrete optimal transport on grids instance ten times.
 For every such pair, we get one datapoint by averaging these ten runs.
 This is shown in Figure~\ref{fig:boxplots} (a)--(j).
 Additionally, the average runtime in each dataset category and dimension is shown as an overview in Figure~\ref{fig:overview} (a)--(c).
@@ -292,9 +293,9 @@ We focused on the case where the sets $X$ and $Y$ of (\ref{ot:dense}) are grids 
 We achieved roughly a 2--3 times faster runtime compared to Schmitzer's program.
 It would be nice to have improved solvers for other geometric constellations of $X$ and $Y$ and other cost functions $c$.
 For this, we think that the work of Schmitzer~\cite{schmitzer2016sparse} is again a good starting point, since he not only considers grids and squared Euclidean distance, but also $X,Y \subseteq \mathbb{R}^d$ with squared Euclidean distance or strictly convex cost functions, and $X,Y \subseteq S_d = \{x \in \mathbb{R}^d: \Vert x \Vert = 1\}$ with squared geodesic distance.
-Another direction for future work is to implement a general interface to support warmstarts in LEMON's network simplex algorithm.
+Another direction for future work is to implement a general interface to support warm starts in LEMON's network simplex algorithm.
 As evident from Schmitzer's and this article~\cite{schmitzer2016sparse}, LEMON is a powerful open source library and the network simplex algorithm is an important tool in other algorithms.
-Therefore, it would be a good idea to further develop LEMON and unfurl its full potential.
+Therefore, it would be a good idea to further develop LEMON and unlock its full potential.
 
 \bibliography{references}
 
