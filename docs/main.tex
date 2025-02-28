@@ -280,7 +280,7 @@ We refer the reader to the article of Schrieber et al.~\cite{schrieber2017dotmar
 We can think of one dataset as a probability measure $\mu$ or $\nu$, respectively, in a discrete optimal transport problem~(\ref{ot:dense}) on grids.
 In each dataset category of DOTmark and each grid dimension from $32 \times 32$ to $128 \times 128$, we pair every two distinct datasets, consider them as $\mu$ and $\nu$, and solve the corresponding discrete optimal transport on grids (\ref{ot:dense}) instance with squared Euclidean distance ten times.
 For every such pair, we get one datapoint by averaging these ten runs.
-This is shown in Figure~\ref{fig:boxplots} (a)--(j).
+This is shown in Figure~\ref{fig:boxplots} (a)--(j) in Appendix~\ref{app:boxplots}.
 Additionally, the average runtime in each dataset category and dimension is shown as an overview in Figure~\ref{fig:overview} (a)--(c).
 
 Unfortunately, Schmitzer's solver~\cite{schmitzer2016sparse} can only handle strictly positive measures $\mu$ and $\nu$, although measures with $\mu(x)=0$ or $\nu(y)=0$ for some $x \in X$ or $y \in Y$, respectively, are common in practical applications as DOTmark shows.
@@ -300,7 +300,7 @@ Therefore, it would be a good idea to further develop LEMON and unlock its full 
 
 \newpage
 \appendix
-\section{Boxplots}
+\section{Boxplots}\label{app:boxplots}
 \begin{figure}[h]
 \caption{Boxplots of the averaged runtimes for each pair in each dataset category and each dimension from $32 \times 32$ to $128 \times 128$. The runtimes of Schmitzer's solver are red while the runtimes of our solver are blue.}\label{fig:boxplots}
 \begin{subfigure}{0.4\textwidth}
