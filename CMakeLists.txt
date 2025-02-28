@@ -29,7 +29,7 @@ find_library(LEMON libemon.a)
 option(ULMON_COMPILE_TESTS "Flag to compile tests" ON)
 add_subdirectory(test)
 
-option(ULMON_COMPILE_BENCHMARK "Flag to compile benchmarks" ON)
+option(ULMON_COMPILE_BENCHMARK "Flag to compile benchmarks" OFF)
 if(ULMON_COMPILE_BENCHMARK)
     add_subdirectory(benchmark)
 endif()
