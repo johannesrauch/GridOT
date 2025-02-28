@@ -1,3 +1,0 @@
-num dim cls tms sol
-7 256 CauchyDensity 1.6 GridOT
-9 256 ClassicImages 10496.6 GridOT

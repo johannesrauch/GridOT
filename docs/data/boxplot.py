@@ -48,6 +48,7 @@ if __name__ == "__main__":
                 continue
             #if col[4] == "0": # Not optimal
                 #continue
+            assert(col[4] == "1")
             if int(col[0]) > 128:
                 continue
             

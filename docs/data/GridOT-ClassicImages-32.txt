@@ -1,6 +1,6 @@
 \addplot+ [boxplot prepared={
-lower whisker=1,
-lower quartile=5.9,
+lower whisker=5.0,
+lower quartile=6.0,
 median=6.3,
 upper quartile=6.8,
 upper whisker=8.7,

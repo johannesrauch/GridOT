@@ -32,8 +32,8 @@ def write_speedup(data1, data2):
             t2 = float(data2[i][3])
             assert(data1[i][0] == data2[i][0])
             assert(data1[i][1] == data2[i][1])
-            if t2 > 1:
-                file.write(f"{ordering[data1[i][1]] + 1} {data1[i][0]} {data1[i][1]} {t2/t1}\n")
+            assert(t2 > 1)
+            file.write(f"{ordering[data1[i][1]] + 1} {data1[i][0]} {data1[i][1]} {t2/t1}\n")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

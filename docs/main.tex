@@ -98,7 +98,7 @@
 
 \begin{abstract}
 We provide an improved implementation of Schmitzer's sparse multi-scale algorithm~\cite{schmitzer2016sparse} for discrete optimal transport on grids.
-We report roughly 2--3 times faster runtimes on the DOTmark benchmark~\cite{schrieber2017dotmark}.
+We report roughly 2--4 times faster runtimes on the DOTmark benchmark~\cite{schrieber2017dotmark}.
 The source code is open source and publicly available.
 \end{abstract}
 
@@ -124,7 +124,7 @@ Given two finite sets $X$ and $Y$ together with two probability measures $\mu \i
 %Let $\overline{\mathbb{R}} = \mathbb{R} \cup \{\infty\}$.
 For a cost function $c: X \times Y \rightarrow \mathbb{R} \cup \{\infty\}$ the discrete optimal transport problem is
 \begin{align}\tag{$P$}\label{ot:dense}
-\min_{\pi \in \Pi(\mu,\nu)} C(\pi), \quad\text{where}\quad C(\pi) = \sum_{(x,y) \in X \times Y} c(x,y)\pi(x,y).
+\min \{C(\pi) : \pi \in \Pi(\mu,\nu)\}, \quad\text{where}\quad C(\pi) = \sum_{(x,y) \in X \times Y} c(x,y)\pi(x,y).
 \end{align}
 For an integer $i$, let $[i] = \{1, 2, \dots, i\}$.
 We say that (\ref{ot:dense}) is on a \emph{grid} if $X = [x_1] \times \dots \times [x_d]$ and $Y = [y_1] \times \dots \times [y_d]$ for some positive integers $d$, $x_1, \dots, x_d$ and $y_1, \dots, y_d$.
@@ -132,7 +132,7 @@ Additionally, $c$ is the squared Euclidean distance.
 The discrete optimal transport problem (\ref{ot:dense}) is ``dense'' in the sense that an algorithm solving (\ref{ot:dense}) has to consider couplings of all elements in $X \times Y$, of which there are quadratically many.
 If $N \subset X \times Y$ is a ``small'' subset, then the restriction
 \begin{align}\tag{$P'$}\label{ot:sparse}
-\min_{\pi \in \Pi(\mu,\nu), \supp \pi \subseteq N} C(\pi)
+\min \{C(\pi) : \pi \in \Pi(\mu,\nu), \supp \pi \subseteq N\}
 \end{align}
 of (\ref{ot:dense}) is ``sparse'' in the sense that an algorithm solving (\ref{ot:sparse}) only has to consider couplings of all elements in $N$.
 We say that $N$ is the \emph{neighborhood} of (\ref{ot:sparse}).
@@ -175,7 +175,7 @@ We adhere to LEMON's design choice and use compile-time polymorphisms (templates
 Furthermore, we use many of the standard library utilities to avoid dynamically allocating memory and handling raw pointers manually.
 This avoids memory leaks and ensures memory safety.
 (Using Valgrind\footnote{\href{https://valgrind.org/}{\tt https://valgrind.org/},} we noticed memory leaks in Schmitzer's solver.)
-On the DOTmark benchmark~\cite{schrieber2017dotmark}, this results in roughly a 2--3 times faster run-time compared to Schmitzer's solver (see Section~\ref{sec:res}).
+On the DOTmark benchmark~\cite{schrieber2017dotmark}, this results in roughly a 2--4 times faster run-time compared to Schmitzer's solver (see Section~\ref{sec:res}).
 Our code is open source and publicly available on GitHub\footnote{\href{https://github.com/johannesrauch/GridOT/}{\texttt{https://github.com/johannesrauch/GridOT/}}}.
 
 \begin{figure}[h]
@@ -228,7 +228,7 @@ ylabel={$t$ in ms},
 hide x axis,
 axis y line*=right,
 ymin=1,
-ymax=4,
+ymax=5,
 ylabel={Speedup factor},
 ]
 \addplot [darkgray, thick] table [x=num, y=speedup] {data/Speedup-64.txt};
@@ -258,7 +258,7 @@ ylabel={$t$ in ms},
 hide x axis,
 axis y line*=right,
 ymin=1,
-ymax=4,
+ymax=6,
 ylabel={Speedup factor},
 ]
 \addplot [darkgray, thick] table [x=num, y=speedup] {data/Speedup-128.txt};
@@ -269,28 +269,27 @@ ylabel={Speedup factor},
 \end{figure}
 
 \section{Results}\label{sec:res}
-We tested our program on a computer with an Intel(R) Core(TM) i7-8700K CPU @ 3.70GHz and $2 \times 8$ GiB DDR4 DIMM @ 2133 MHz in dual channel mode.
-For the test, we use the DOTmark~\cite{schrieber2017dotmark} dataset as a benchmark.
+We tested both programs on a computer with an Intel(R) Core(TM) i7-8700K CPU @ 3.70GHz and $2 \times 8$ GiB DDR4 DIMM @ 2133 MHz in dual channel mode.
+For the test, we use the DOTmark dataset~\cite{schrieber2017dotmark}.
 DOTmark consists of several dataset categories: White noise, rough, moderate and smooth Gaussian random field (GRF), logarithmic and logistic GRF, Cauchy density, shapes, classic images, and microscopy images.
 Note that these categories can be divided into two parts: One part is randomly generated and the other part is taken from practical applications.
 Each category comes in grid dimensions ranging from $32 \times 32$ to $512 \times 512$, increasing by factors of two.
 We only go up to dimension $128 \times 128$ in our tests.
 We refer the reader to the article of Schrieber et al.~\cite{schrieber2017dotmark} for more details on DOTmark.
 
-We can think of one dataset as one probability measure $\mu$ or $\nu$, respectively, in a discrete optimal transport problem~(\ref{ot:dense}) on grids.
-In each dataset category of DOTmark and each grid dimension from $32 \times 32$ to $128 \times 128$, we pair every two datasets and solve the corresponding discrete optimal transport on grids instance ten times.
+We can think of one dataset as a probability measure $\mu$ or $\nu$, respectively, in a discrete optimal transport problem~(\ref{ot:dense}) on grids.
+In each dataset category of DOTmark and each grid dimension from $32 \times 32$ to $128 \times 128$, we pair every two distinct datasets, consider them as $\mu$ and $\nu$, and solve the corresponding discrete optimal transport on grids (\ref{ot:dense}) instance with squared Euclidean distance ten times.
 For every such pair, we get one datapoint by averaging these ten runs.
 This is shown in Figure~\ref{fig:boxplots} (a)--(j).
 Additionally, the average runtime in each dataset category and dimension is shown as an overview in Figure~\ref{fig:overview} (a)--(c).
 
 Unfortunately, Schmitzer's solver~\cite{schmitzer2016sparse} can only handle strictly positive measures $\mu$ and $\nu$, although measures with $\mu(x)=0$ or $\nu(y)=0$ for some $x \in X$ or $y \in Y$, respectively, are common in practical applications as DOTmark shows.
-Therefore, some of the datapoints in Figure~\ref{fig:overview} and Figure~\ref{fig:boxplots} are missing for Schmitzer's solver.
-Specifically, Schmitzer's algorithm fails on the shapes and microscopy images datasets without a workaround while our solver works on them.
+Therefore, we increment each datapoint of each dataset of DOTmark by one to meet this requirement.
 
 \section{Conclusion}
 We showed that there is room for improvement in discrete optimal transport solvers, which are still competitive when compared to continuous, numeric solvers~\cite{schrieber2017dotmark}.
 We focused on the case where the sets $X$ and $Y$ of (\ref{ot:dense}) are grids and the cost function $c$ is the squared Euclidean distance.
-We achieved roughly a 2--3 times faster runtime compared to Schmitzer's program.
+We achieved roughly a 2--4 times faster runtime compared to Schmitzer's program.
 It would be nice to have improved solvers for other geometric constellations of $X$ and $Y$ and other cost functions $c$.
 For this, we think that the work of Schmitzer~\cite{schmitzer2016sparse} is again a good starting point, since he not only considers grids and squared Euclidean distance, but also $X,Y \subseteq \mathbb{R}^d$ with squared Euclidean distance or strictly convex cost functions, and $X,Y \subseteq S_d = \{x \in \mathbb{R}^d: \Vert x \Vert = 1\}$ with squared geodesic distance.
 Another direction for future work is to implement a general interface to support warm starts in LEMON's network simplex algorithm.
@@ -473,9 +472,9 @@ ylabel={$t$ in ms},
 \input{data/GridOT-Shapes-32.txt}
 \input{data/GridOT-Shapes-64.txt}
 \input{data/GridOT-Shapes-128.txt}
-%\input{data/MultiScaleOT-Shapes-32.txt}
-%\input{data/MultiScaleOT-Shapes-64.txt}
-%\input{data/MultiScaleOT-Shapes-128.txt}
+\input{data/MultiScaleOT-Shapes-32.txt}
+\input{data/MultiScaleOT-Shapes-64.txt}
+\input{data/MultiScaleOT-Shapes-128.txt}
 \end{axis}
 \end{tikzpicture}
 \caption{Shapes.}
@@ -518,10 +517,9 @@ ylabel={$t$ in ms},
 \input{data/GridOT-MicroscopyImages-32.txt}
 \input{data/GridOT-MicroscopyImages-64.txt}
 \input{data/GridOT-MicroscopyImages-128.txt}
-% Error in Schmitzer's solver
-%\input{data/MultiScaleOT-MicroscopyImages-32.txt}
-%\input{data/MultiScaleOT-MicroscopyImages-64.txt}
-%\input{data/MultiScaleOT-MicroscopyImages-128.txt}
+\input{data/MultiScaleOT-MicroscopyImages-32.txt}
+\input{data/MultiScaleOT-MicroscopyImages-64.txt}
+\input{data/MultiScaleOT-MicroscopyImages-128.txt}
 \end{axis}
 \end{tikzpicture}
 \caption{Microscopy images.}

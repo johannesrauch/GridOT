@@ -1,8 +1,8 @@
 \addplot+ [boxplot prepared={
-lower whisker=1,
-lower quartile=6.7,
-median=158.0,
-upper quartile=171.6,
-upper whisker=206.7,
+lower whisker=130.0,
+lower quartile=156.4,
+median=166.8,
+upper quartile=174.5,
+upper whisker=209.8,
 draw position=6.125,
 }, color=red, solid] coordinates {};

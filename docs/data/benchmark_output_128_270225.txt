@@ -1,0 +1,23 @@
+10 runs per pair; resolution = 128
+    dim            class  i  j opt       obj  time [ms]
+-------------------------------------------------------
+    128    CauchyDensity         1                613.3   GridOT
+    128    CauchyDensity         1               1257.6   MultiScaleOT
+    128    ClassicImages         1                695.6   GridOT
+    128    ClassicImages         1               1699.2   MultiScaleOT
+    128      GRFmoderate         1                681.7   GridOT
+    128      GRFmoderate         1               1689.9   MultiScaleOT
+    128         GRFrough         1                765.7   GridOT
+    128         GRFrough         1               1717.0   MultiScaleOT
+    128        GRFsmooth         1                650.4   GridOT
+    128        GRFsmooth         1               1685.9   MultiScaleOT
+    128           LogGRF         1                611.0   GridOT
+    128           LogGRF         1               1017.0   MultiScaleOT
+    128         LogitGRF         1                670.9   GridOT
+    128         LogitGRF         1               2220.0   MultiScaleOT
+    128 MicroscopyImages         1                421.4   GridOT
+    128 MicroscopyImages         1               1194.1   MultiScaleOT
+    128           Shapes         1                558.3   GridOT
+    128           Shapes         1               3126.0   MultiScaleOT
+    128       WhiteNoise         1                627.7   GridOT
+    128       WhiteNoise         1               1539.7   MultiScaleOT
