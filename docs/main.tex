@@ -279,7 +279,7 @@ We refer the reader to the article of Schrieber et al.~\cite{schrieber2017dotmar
 
 We can think of one dataset as a probability measure $\mu$ or $\nu$, respectively, in a discrete optimal transport problem~(\ref{ot:dense}) on grids.
 In each dataset category of DOTmark and each grid dimension from $32 \times 32$ to $128 \times 128$, we pair every two distinct datasets, consider them as $\mu$ and $\nu$, and solve the corresponding discrete optimal transport on grids (\ref{ot:dense}) instance with squared Euclidean distance ten times.
-For every such pair, we get one datapoint by averaging these ten runs.
+For every such pair, we measure the CPU time of every run and get one datapoint by averaging these ten CPU runtimes.
 This is shown in Figure~\ref{fig:boxplots} (a)--(j) in Appendix~\ref{app:boxplots}.
 Additionally, the average runtime in each dataset category and dimension is shown as an overview in Figure~\ref{fig:overview} (a)--(c).
 
